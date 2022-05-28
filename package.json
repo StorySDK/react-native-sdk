@@ -36,23 +36,27 @@
     "ios",
     "android"
   ],
-  "repository": "https://github.com/StorySDK/react-native-sdk/storysdk-react-native-sdk",
-  "author": "StorySDK.com <emelyanov.dev@gmail.com> (https://github.com/StorySDK/react-native-sdk)",
+  "repository": "https://github.com/StorySDK/react-native-sdk/",
+  "author": "StorySDK.com (https://github.com/StorySDK/react-native-sdk)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/StorySDK/react-native-sdk/storysdk-react-native-sdk/issues"
+    "url": "https://github.com/StorySDK/react-native-sdk/issues"
   },
-  "homepage": "https://github.com/StorySDK/react-native-sdk/storysdk-react-native-sdk#readme",
+  "homepage": "https://github.com/StorySDK/react-native-sdk#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
+  },
+  "resolutions": {
+    "@types/react": "17.0.2"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^11.0.0",
     "@react-native-community/eslint-config": "^2.0.0",
     "@release-it/conventional-changelog": "^2.0.0",
     "@types/jest": "^26.0.0",
-    "@types/react": "^16.9.19",
-    "@types/react-native": "0.62.13",
+    "@types/react": "^17.0.2",
+    "@types/react-native": "0.66.4",
+    "@types/react-native-video": "^5.0.12",
     "commitlint": "^11.0.0",
     "eslint": "^7.2.0",
     "eslint-config-prettier": "^7.0.0",
@@ -65,11 +69,23 @@
     "react-native": "0.63.4",
     "react-native-builder-bob": "^0.18.0",
     "release-it": "^14.2.2",
-    "typescript": "^4.1.3"
+    "typescript": "^4.1.3",
+    "@miblanchard/react-native-slider": "^2.1.0",
+    "react-native-device-info": "^8.7.1",
+    "react-native-modal": "^13.0.1",
+    "react-native-svg": "^12.3.0",
+    "react-native-text-gradient": "^0.1.7",
+    "react-native-video": "^5.2.0"
   },
   "peerDependencies": {
     "react": "*",
-    "react-native": "*"
+    "react-native": "*",
+    "@miblanchard/react-native-slider": "^2.1.0",
+    "react-native-device-info": "^8.7.1",
+    "react-native-modal": "^13.0.1",
+    "react-native-svg": "^12.3.0",
+    "react-native-text-gradient": "^0.1.7",
+    "react-native-video": "^5.2.0"
   },
   "jest": {
     "preset": "react-native",
@@ -143,5 +159,10 @@
         }
       ]
     ]
+  },
+  "dependencies": {
+    "axios": "^0.27.2",
+    "fbjs": "^3.0.4",
+    "nanoid": "^3.3.4"
   }
 }

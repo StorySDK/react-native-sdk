@@ -1,3 +1,4 @@
-export function multiply(a: number, b: number): Promise<number> {
-  return Promise.resolve(a * b);
-}
+import StorySDKComponent from './components/StorySDKComponent';
+import GroupsList from './components/GroupsList';
+
+export { StorySDKComponent, GroupsList };
