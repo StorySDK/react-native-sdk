@@ -44,7 +44,8 @@
   },
   "homepage": "https://github.com/StorySDK/react-native-sdk#readme",
   "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   },
   "resolutions": {
     "@types/react": "17.0.2"
