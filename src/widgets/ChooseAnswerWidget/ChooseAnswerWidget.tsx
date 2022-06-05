@@ -81,7 +81,7 @@ export const ChooseAnswerWidget: React.FC<Props> = ({
         useNativeDriver: true,
       }).start();
     }
-  }, [userAnswer]);
+  }, [celebrateAnimation, correct, shakeAnimation, userAnswer]);
 
   const calculate = (size: number) => {
     if (position && positionLimits) {
@@ -122,7 +122,7 @@ export const ChooseAnswerWidget: React.FC<Props> = ({
         fontSize: calculate(INIT_ELEMENT_STYLES.answerTitle.fontSize),
       },
     }),
-    [calculate],
+    [calculate]
   );
 
   return (

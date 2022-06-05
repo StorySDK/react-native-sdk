@@ -144,7 +144,7 @@ export const SliderWidget: React.FC<Props> = ({
         renderAboveThumbComponent={renderAboveThumbComponent}
         renderThumbComponent={renderThumbComponent}
         disabled={status === 'moved'}
-        minimumTrackTintColor='#FF00D0'
+        minimumTrackTintColor="#FF00D0"
         trackStyle={styles.track}
         thumbStyle={styles.thumb}
       />
