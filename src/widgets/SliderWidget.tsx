@@ -37,11 +37,11 @@ const INIT_ELEMENT_STYLES = {
 };
 
 export const SliderWidget: React.FC<Props> = ({
-                                                params,
-                                                onSlide,
-                                                position,
-                                                positionLimits,
-                                              }) => {
+  params,
+  onSlide,
+  position,
+  positionLimits,
+}) => {
   const [value, setValue] = useState(params.value || 0);
   const [status, setStatus] = useState<'init' | 'moving' | 'moved'>('init');
   const { animStyles, startAnim } = useSpiritAnim();
@@ -71,7 +71,7 @@ export const SliderWidget: React.FC<Props> = ({
         borderRadius: calculate(INIT_ELEMENT_STYLES.slider.borderRadius),
       },
     }),
-    [calculate],
+    [calculate]
   );
 
   const handleValueChange = (newValue: number | Array<number>) => {

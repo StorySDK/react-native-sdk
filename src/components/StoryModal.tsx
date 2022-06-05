@@ -142,17 +142,15 @@ export const StoryModal: React.FC<StoryModalProps> = (props) => {
         {stories.map((_story, index) => (
           <View
             key={_story.id}
-            style={{
-              position: 'relative',
-              flex: 1,
-              borderRadius: 4,
-              height: 4,
-              backgroundColor:
-                index < currentStory
-                  ? 'rgba(255, 255, 255, 0.7)'
-                  : 'rgba(255, 255, 255, 0.3)',
-              marginRight: 2,
-            }}
+            style={[
+              styles.indicator,
+              {
+                backgroundColor:
+                  index < currentStory
+                    ? 'rgba(255, 255, 255, 0.7)'
+                    : 'rgba(255, 255, 255, 0.3)',
+              },
+            ]}
           >
             {index === currentStory && (
               <MemoAnimatedIndicator
@@ -177,7 +175,10 @@ const styles = StyleSheet.create({
     width: Dimensions.get('screen').width,
     height: Dimensions.get('screen').height,
   },
-  content: { flex: 1, flexDirection: 'row', overflow: 'hidden' },
+  content: {
+    flex: 1,
+    flexDirection: 'row',
+  },
   closeBtn: {
     position: 'absolute',
     display: 'flex',
@@ -230,10 +231,10 @@ const styles = StyleSheet.create({
     height: 4,
   },
   indicator: {
+    position: 'relative',
     flex: 1,
     borderRadius: 4,
     height: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
     marginRight: 2,
   },
 });

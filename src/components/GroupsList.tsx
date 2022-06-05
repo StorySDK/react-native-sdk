@@ -76,9 +76,10 @@ const GroupsList = (props: GroupsListProps) => {
         isVisible={modalShow}
         style={styles.modal}
         onSwipeComplete={handleCloseModal}
+        onBackButtonPress={handleCloseModal}
         backdropOpacity={1}
         statusBarTranslucent={false}
-        swipeDirection='down'
+        swipeDirection="down"
       >
         <StoryModalMemo />
       </Modal>

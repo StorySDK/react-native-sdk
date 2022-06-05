@@ -40,44 +40,50 @@ export type WidgetContentType =
       id: string | number;
       params: ChooseAnswerWidgetParamsType;
       onAnswer(): void;
-  }
-    | {
-    type: WidgetsTypes.EMOJI_REACTION;
-    id: string | number;
-    params: EmojiReactionWidgetParamsType;
-    onReact(): void;
-  }
-    | {
-    type: WidgetsTypes.TALK_ABOUT;
-    id: string | number;
-    params: TalkAboutWidgetParamsType;
-    onAnswer(): void;
-  }
-    | {
-    type: WidgetsTypes.CLICK_ME;
-    id: string | number;
-    params: ClickMeWidgetParamsType;
-    widgetImage: string;
-    onClick(): void;
-  }
-    | {
-    type: WidgetsTypes.QUESTION;
-    id: string | number;
-    params: QuestionWidgetParamsType;
-    onAnswer(): void;
-  } | {
-    type: WidgetsTypes.SLIDER;
-    id: string | number;
-    params: SliderWidgetParamsType;
-    onSlide(): void;
-  } | {
-    type: WidgetsTypes.SWIPE_UP;
-    id: string | number;
-    params: SwipeUpWidgetParamsType;
-    widgetImage: string;
-    onSwipe(): void;
-  }
-  | { type: WidgetsTypes.TEXT; params: TextWidgetParamsType; widgetImage: string }
+    }
+  | {
+      type: WidgetsTypes.EMOJI_REACTION;
+      id: string | number;
+      params: EmojiReactionWidgetParamsType;
+      onReact(): void;
+    }
+  | {
+      type: WidgetsTypes.TALK_ABOUT;
+      id: string | number;
+      params: TalkAboutWidgetParamsType;
+      onAnswer(): void;
+    }
+  | {
+      type: WidgetsTypes.CLICK_ME;
+      id: string | number;
+      params: ClickMeWidgetParamsType;
+      widgetImage: string;
+      onClick(): void;
+    }
+  | {
+      type: WidgetsTypes.QUESTION;
+      id: string | number;
+      params: QuestionWidgetParamsType;
+      onAnswer(): void;
+    }
+  | {
+      type: WidgetsTypes.SLIDER;
+      id: string | number;
+      params: SliderWidgetParamsType;
+      onSlide(): void;
+    }
+  | {
+      type: WidgetsTypes.SWIPE_UP;
+      id: string | number;
+      params: SwipeUpWidgetParamsType;
+      widgetImage: string;
+      onSwipe(): void;
+    }
+  | {
+      type: WidgetsTypes.TEXT;
+      params: TextWidgetParamsType;
+      widgetImage: string;
+    }
   | { type: WidgetsTypes.ELLIPSE; params: EllipseWidgetParamsType }
   | { type: WidgetsTypes.RECTANGLE; params: RectangleWidgetParamsType };
 

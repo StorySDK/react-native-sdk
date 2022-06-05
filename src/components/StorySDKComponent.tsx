@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { Platform } from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 import axios from 'axios';
 import type { GroupType } from '../types';
@@ -24,57 +25,47 @@ type AppType = {
 async function fetchAppData(
   token: string,
   uniqUserId: string,
-  locale?: string,
+  locale?: string
 ) {
   let app: AppType;
   let groups: GroupType[];
 
-  axios.defaults.baseURL = 'https://api.storysdk.com/api/v1';
+  axios.defaults.baseURL = 'https://api.storysdk.com/sdk/v1';
   axios.defaults.headers.common = { Authorization: `SDK ${token}` };
 
-  const appsResponse = await axios({
-    method: 'get',
-    url: '/apps',
-  });
+  const appsResponse = await axios.get('/app');
 
   app = {
-    id: appsResponse.data.data[0].id,
+    id: appsResponse.data.data.id,
     settings: {
-      groupView: appsResponse.data.data[0].settings.groupView.react,
+      groupView: appsResponse.data.data.settings.groupView[Platform.OS],
     },
-    localization: appsResponse.data.data[0].localization,
+    localization: appsResponse.data.data.localization,
   };
-  const groupsResponse = await axios({
-    method: 'get',
-    url: `/apps/${app.id}/groups`,
-  });
 
-  const lang = locale ? locale : app.localization.default;
+  const groupsResponse = await axios.get('/groups');
 
   groups = groupsResponse.data.data.map(({ id, title, image_url }: any) => ({
     id,
-    title: title[lang],
-    imageUrl: image_url[lang],
+    title: title,
+    imageUrl: image_url,
     stories: [],
   }));
 
   for (let group of groups) {
-    const storiesResponse = await axios({
-      method: 'get',
-      url: `/apps/${app.id}/groups/${group.id}/stories`,
-    });
-
+    const storiesResponse = await axios.get(`/groups/${group.id}/stories`);
+    console.log(storiesResponse.data.data);
     group.stories = storiesResponse.data.data.map((story: any) => ({
       id: story.id,
       storyData: adaptWidgets(
-        story.story_data[lang].widgets,
+        story.story_data.widgets,
         story.id,
         group.id,
         uniqUserId,
         token,
-        locale ? locale : app.localization.default,
+        locale ? locale : app.localization.default
       ),
-      background: story.story_data[lang].background,
+      background: story.story_data.background,
       positionIndex: story.position,
     }));
   }
@@ -93,7 +84,7 @@ const StorySDKComponent: React.FC<StorySDKComponentProps> = ({
   const [groups, setGroups] = React.useState<GroupType[]>([]);
 
   React.useEffect(() => {
-    axios.defaults.baseURL = 'https://api.diffapp.link/api/v1';
+    axios.defaults.baseURL = 'https://api.storysdk.com/sdk/v1';
     axios.defaults.headers.common = { Authorization: `SDK ${token}` };
 
     fetchAppData(token, DeviceInfo.getDeviceId(), locale).then((response) => {

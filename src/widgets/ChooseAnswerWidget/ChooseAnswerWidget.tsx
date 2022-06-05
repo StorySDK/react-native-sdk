@@ -45,11 +45,11 @@ const INIT_ELEMENT_STYLES = {
 };
 
 export const ChooseAnswerWidget: React.FC<Props> = ({
-                                                      params,
-                                                      onAnswer,
-                                                      position,
-                                                      positionLimits,
-                                                    }) => {
+  params,
+  onAnswer,
+  position,
+  positionLimits,
+}) => {
   const { text, answers, correct } = params;
 
   const shakeAnimation = new Animated.Value(0);
