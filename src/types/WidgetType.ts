@@ -14,18 +14,6 @@ import type {
 } from './widgetsParams';
 import type { WidgetsTypes } from './WidgetsTypes';
 
-export type ThemeColorType =
-  | 'purple'
-  | 'blue'
-  | 'darkBlue'
-  | 'white'
-  | 'green'
-  | 'orange'
-  | 'orangeRed'
-  | 'yellow'
-  | 'black'
-  | 'red'
-  | 'grey';
 export type ColorValue = { type: 'color'; value: string };
 export type GradientValue = { type: 'gradient'; value: string[] };
 export type ImageValue = { type: 'image' | 'video'; value: string };
