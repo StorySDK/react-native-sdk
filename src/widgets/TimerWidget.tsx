@@ -18,9 +18,9 @@ const calculateTime = (time: number) => {
   };
 };
 
-export const TimerWidget: React.FC<Props> = ({params}) => {
+export const TimerWidget: React.FC<Props> = ({ params }) => {
   const [time, setTime] = React.useState(
-    calculateTime(params.time + 60000 - new Date().getTime()),
+    calculateTime(params.time + 60000 - new Date().getTime())
   );
 
   React.useEffect(() => {
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  col: {display: 'flex', flexDirection: 'column'},
+  col: { display: 'flex', flexDirection: 'column' },
   digitRow: {
     display: 'flex',
     flexDirection: 'row',
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: 'rgba(5, 5, 29, 0.15)',
   },
-  digitText: {color: '#05051d', fontSize: 16, fontWeight: '500'},
+  digitText: { color: '#05051d', fontSize: 16, fontWeight: '500' },
   divider: {},
   caption: {
     marginTop: 2,

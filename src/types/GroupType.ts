@@ -1,4 +1,4 @@
-import type {StoryType} from './index';
+import type { StoryType } from './index';
 
 export interface GroupType {
   id: string;

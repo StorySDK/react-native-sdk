@@ -1,7 +1,7 @@
 import type {
   WidgetPositionType,
   BackgroundType,
-  WidgetPositionLimitsType,
+  WidgetPositionLimitsType, ThemeColorType,
 } from '../types';
 
 export const stylesUtils = {
@@ -77,7 +77,7 @@ export const stylesUtils = {
       : elementSize;
   },
 
-  getThemeColor(color: string) {
+  getThemeColor(color: ThemeColorType) {
     switch (color) {
       case 'purple':
         return '#ae13ab';
@@ -105,7 +105,7 @@ export const stylesUtils = {
         return '#ffffff';
     }
   },
-  getThemeContrastColor(color: string) {
+  getThemeContrastColor(color: ThemeColorType) {
     switch (color) {
       case 'purple':
         return '#ffffff';
