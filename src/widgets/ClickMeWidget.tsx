@@ -10,10 +10,10 @@ interface Props {
 }
 
 export const ClickMeWidget: React.FC<Props> = ({
-                                                 params,
-                                                 widgetImage,
-                                                 onClick,
-                                               }) => {
+  params,
+  widgetImage,
+  onClick,
+}) => {
   const handlePress = async () => {
     onClick && onClick();
     const supported = await Linking.canOpenURL(params.url);

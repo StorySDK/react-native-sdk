@@ -29,14 +29,14 @@ interface AnswerProps {
 }
 
 export const Answer: React.FC<AnswerProps> = ({
-                                                id,
-                                                title,
-                                                onMark,
-                                                voted,
-                                                correct,
-                                                choosen,
-                                                calculatedStyles,
-                                              }) => {
+  id,
+  title,
+  onMark,
+  voted,
+  correct,
+  choosen,
+  calculatedStyles,
+}) => {
   const handleMarkAnswer = () => {
     onMark();
   };
@@ -79,9 +79,9 @@ export const Answer: React.FC<AnswerProps> = ({
         style={[
           styles.variantCircle,
           voted &&
-          !correct &&
-          choosen &&
-          styles.variantCircle__incorrectChoosen,
+            !correct &&
+            choosen &&
+            styles.variantCircle__incorrectChoosen,
           voted && !correct && styles.variantCircle__incorrect,
           calculatedStyles.answerId,
         ]}

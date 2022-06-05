@@ -6,7 +6,7 @@ const actionToWidget = (
   groupId: string,
   uniqUserId: string,
   token: string,
-  locale: string,
+  locale: string
 ) => {
   switch (widget.content.type) {
     case 'choose_answer':
@@ -133,7 +133,7 @@ export const adaptWidgets = (
   groupId: string,
   uniqUserId: string,
   token: string,
-  locale: string,
+  locale: string
 ) =>
   widgets.map((widget: any) => ({
     ...widget,

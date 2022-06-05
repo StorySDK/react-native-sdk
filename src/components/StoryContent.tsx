@@ -1,5 +1,6 @@
 import React from 'react';
 import Video from 'react-native-video';
+import LinearGradient from 'react-native-linear-gradient';
 import { View, Dimensions, StyleSheet, Pressable } from 'react-native';
 import type { StoryType } from '../types';
 import { stylesUtils } from '../utils';
@@ -13,7 +14,7 @@ interface StoryContentProps {
   onPrev(): void;
 }
 
-export const StoryContent: React.FC<StoryContentProps> = props => {
+export const StoryContent: React.FC<StoryContentProps> = (props) => {
   const { story, onNext, onPrev } = props;
   const video = React.useRef<Video>(null);
 
@@ -31,10 +32,12 @@ export const StoryContent: React.FC<StoryContentProps> = props => {
           transform: [
             {
               scale: parseFloat(
-                (Dimensions.get('window').width / 390).toFixed(3),
+                (Dimensions.get('window').width / 390).toFixed(3)
               ),
             },
-            { translateX: Math.round(Dimensions.get('window').width - 390) / 2 },
+            {
+              translateX: Math.round(Dimensions.get('window').width - 390) / 2,
+            },
             {
               translateY:
                 (Math.round(Dimensions.get('window').width - 390) / 2) * 1.778,
@@ -43,6 +46,9 @@ export const StoryContent: React.FC<StoryContentProps> = props => {
         },
       ]}
     >
+      {story.background.type === 'gradient' && (
+        <LinearGradient style={styles.video} colors={story.background.value} />
+      )}
       {story.background.type === 'video' && (
         <Video
           ref={video}
@@ -50,13 +56,13 @@ export const StoryContent: React.FC<StoryContentProps> = props => {
           source={{
             uri: story.background.value,
           }}
-          resizeMode='cover'
+          resizeMode="cover"
           paused={false}
         />
       )}
       <Pressable onPress={onPrev} style={styles.previewHandler} />
       <Pressable onPress={onNext} style={styles.nextHandler} />
-      {story.storyData.map(widget => (
+      {story.storyData.map((widget) => (
         <View
           key={widget.id}
           style={[
@@ -84,9 +90,8 @@ export const StoryContent: React.FC<StoryContentProps> = props => {
 const styles = StyleSheet.create({
   container: {
     position: 'relative',
-    width: 390,
-    height: 694,
-    borderRadius: 8,
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').width / 0.5625,
     overflow: 'hidden',
   },
   video: {
@@ -94,8 +99,9 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     alignSelf: 'center',
-    width: 390,
-    height: 694,
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').width / 0.5625,
+    overflow: 'hidden',
   },
   previewHandler: {
     position: 'absolute',
