@@ -6,16 +6,16 @@ import type {
   WidgetPositionLimitsType,
   WidgetPositionType,
 } from '../types';
+import Reactions from '../core/Reactions';
 
 interface Props {
   params: QuestionWidgetParamsType;
   position: WidgetPositionType;
   positionLimits: WidgetPositionLimitsType;
-
-  onAnswer?(option: any): any;
+  widgetId: string;
 }
 
-export const QuestionWidget: React.FC<Props> = ({ params, onAnswer }) => {
+export const QuestionWidget: React.FC<Props> = ({ params, widgetId }) => {
   const confirmAnim = React.useRef(new Animated.Value(50)).current;
   const declineAnim = React.useRef(new Animated.Value(50)).current;
   const [answer, setAnswer] = React.useState<'confirm' | 'decline' | null>(
@@ -28,20 +28,20 @@ export const QuestionWidget: React.FC<Props> = ({ params, onAnswer }) => {
 
   const handleSelect = (option: 'confirm' | 'decline') => () => {
     if (!answer) {
-      onAnswer &&
-        onAnswer(option).then((data: any) => {
-          setPercents(data);
-          Animated.timing(confirmAnim, {
-            useNativeDriver: false,
-            toValue: calculateWidth(data.confirm),
-            duration: 250,
-          }).start();
-          Animated.timing(declineAnim, {
-            useNativeDriver: false,
-            toValue: calculateWidth(data.decline),
-            duration: 250,
-          }).start();
-        });
+      Reactions.registerWidget(widgetId);
+      Reactions.send('answer', option).then((data: any) => {
+        setPercents(data);
+        Animated.timing(confirmAnim, {
+          useNativeDriver: false,
+          toValue: calculateWidth(data.confirm),
+          duration: 250,
+        }).start();
+        Animated.timing(declineAnim, {
+          useNativeDriver: false,
+          toValue: calculateWidth(data.decline),
+          duration: 250,
+        }).start();
+      });
       setAnswer(option);
     }
   };

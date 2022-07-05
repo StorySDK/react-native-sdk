@@ -1,22 +1,36 @@
 import React from 'react';
 import Video from 'react-native-video';
 import LinearGradient from 'react-native-linear-gradient';
-import { View, Dimensions, StyleSheet, Pressable } from 'react-native';
+import {
+  View,
+  Dimensions,
+  StyleSheet,
+  Pressable,
+  PixelRatio,
+} from 'react-native';
 import type { StoryType } from '../types';
 import { stylesUtils } from '../utils';
 import { WidgetFactory } from '../core/WidgetFactory';
+import Reactions from '../core/Reactions';
+import WidgetAnimation from '../core/WidgetAnimation';
 
 interface StoryContentProps {
   story: StoryType;
-
+  foregroundWidget: null | string;
   onNext(): void;
 
   onPrev(): void;
 }
 
 export const StoryContent: React.FC<StoryContentProps> = (props) => {
-  const { story, onNext, onPrev } = props;
+  const { story, onNext, onPrev, foregroundWidget } = props;
   const video = React.useRef<Video>(null);
+
+  console.log(PixelRatio.get());
+
+  React.useEffect(() => {
+    Reactions.registerStory(story.id);
+  }, [story.id]);
 
   React.useEffect(() => {
     if (story.background.type === 'video' && video && video.current) {
@@ -63,25 +77,9 @@ export const StoryContent: React.FC<StoryContentProps> = (props) => {
       <Pressable onPress={onPrev} style={styles.previewHandler} />
       <Pressable onPress={onNext} style={styles.nextHandler} />
       {story.storyData.map((widget) => (
-        <View
-          key={widget.id}
-          style={[
-            styles.widget,
-            {
-              left: widget.position.x,
-              top: widget.position.y,
-              width: widget.position.realWidth,
-              height: widget.position.realHeight,
-              transform: [
-                {
-                  rotate: `${widget.position.rotate}deg`,
-                },
-              ],
-            },
-          ]}
-        >
+        <WidgetAnimation widget={widget} play={widget.id === foregroundWidget}>
           <WidgetFactory widget={widget} storyId={story.id} />
-        </View>
+        </WidgetAnimation>
       ))}
     </View>
   );
@@ -90,8 +88,8 @@ export const StoryContent: React.FC<StoryContentProps> = (props) => {
 const styles = StyleSheet.create({
   container: {
     position: 'relative',
-    width: Dimensions.get('window').width,
-    height: Dimensions.get('window').width / 0.5625,
+    width: 1080 / PixelRatio.get(),
+    height: 1920 / PixelRatio.get(),
     overflow: 'hidden',
   },
   video: {
@@ -99,8 +97,8 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     alignSelf: 'center',
-    width: Dimensions.get('window').width,
-    height: Dimensions.get('window').width / 0.5625,
+    width: 1080 / PixelRatio.get(),
+    height: 1920 / PixelRatio.get(),
     overflow: 'hidden',
   },
   previewHandler: {

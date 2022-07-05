@@ -1,17 +1,43 @@
 import * as React from 'react';
-import { StyleSheet, View, Pressable } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import type { GroupType } from '../types';
+import { GroupItemProps, LoadingStatus } from '../types';
 import StoryModal from './StoryModal';
-import GroupItem from './GroupItem';
 import Modal from 'react-native-modal';
+import Reactions from '../core/Reactions';
+import GroupItem from './GroupItem';
 
 interface GroupsListProps {
   groups: GroupType[];
   style?: 'circle' | 'square' | 'bigSquare' | 'rectangle';
+  status?: LoadingStatus;
+  renderGroupItem?(props: GroupItemProps): React.ReactNode;
 }
 
+const GroupsListSkeleton: React.FC = () => (
+  <View style={skeleton.container}>
+    <View style={skeleton.item} />
+    <View style={skeleton.item} />
+    <View style={skeleton.item} />
+  </View>
+);
+
+const skeleton = StyleSheet.create({
+  container: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  item: {
+    width: 68,
+    height: 86,
+    backgroundColor: '#f5f3f5',
+    borderRadius: 10,
+    marginRight: 20,
+  },
+});
+
 const GroupsList = (props: GroupsListProps) => {
-  const { groups, style = 'circle' } = props;
+  const { groups, style = 'circle', status, renderGroupItem } = props;
   const [viewed, setViewed] = React.useState<number[]>([]);
 
   const [currentGroup, setCurrentGroup] = React.useState(0);
@@ -21,6 +47,7 @@ const GroupsList = (props: GroupsListProps) => {
     setCurrentGroup(groupIndex);
     setViewed([...viewed, groupIndex]);
     setModalShow(true);
+    Reactions.registerGroup(groups[groupIndex].id);
   };
 
   const handlePreviewGroup = () => {
@@ -57,20 +84,33 @@ const GroupsList = (props: GroupsListProps) => {
   return (
     <>
       <View style={styles.groups}>
-        {groups.map((group, index) => (
-          <Pressable
-            key={group.id}
-            style={styles.group}
-            onPress={handleTap(index)}
-          >
-            <GroupItem
-              title={group.title}
-              imageUrl={group.imageUrl}
-              active={!viewed.includes(index)}
-              style={style}
-            />
-          </Pressable>
-        ))}
+        {status === LoadingStatus.LOADED ? (
+          groups.map((group, index) => (
+            <Pressable
+              key={group.id}
+              style={styles.group}
+              onPress={handleTap(index)}
+            >
+              {renderGroupItem ? (
+                renderGroupItem({
+                  title: group.title,
+                  imageUrl: group.imageUrl,
+                  active: !viewed.includes(index),
+                  style: style,
+                })
+              ) : (
+                <GroupItem
+                  title={group.title}
+                  imageUrl={group.imageUrl}
+                  active={!viewed.includes(index)}
+                  style={style}
+                />
+              )}
+            </Pressable>
+          ))
+        ) : (
+          <GroupsListSkeleton />
+        )}
       </View>
       <Modal
         isVisible={modalShow}

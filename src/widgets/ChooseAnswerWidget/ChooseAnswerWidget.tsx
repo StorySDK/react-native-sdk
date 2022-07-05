@@ -8,17 +8,17 @@ import type {
 import { styles } from './styles';
 import { Answer } from './Answer';
 import { stylesUtils } from '../../utils';
+import Reactions from '../../core/Reactions';
 
 interface Props {
   params: ChooseAnswerWidgetParamsType;
   position: WidgetPositionType;
   positionLimits: WidgetPositionLimitsType;
-
-  onAnswer?(answerId: string): void;
+  widgetId: string;
 }
 
 const INIT_ELEMENT_STYLES = {
-  widget: {
+  container: {
     borderRadius: 10,
   },
   header: {
@@ -46,9 +46,9 @@ const INIT_ELEMENT_STYLES = {
 
 export const ChooseAnswerWidget: React.FC<Props> = ({
   params,
-  onAnswer,
   position,
   positionLimits,
+  widgetId,
 }) => {
   const { text, answers, correct } = params;
 
@@ -59,7 +59,9 @@ export const ChooseAnswerWidget: React.FC<Props> = ({
   const handleMarkAnswer = (answerId: string) => () => {
     if (!userAnswer) {
       setUserAnswer(answerId);
-      onAnswer && onAnswer(answerId);
+
+      Reactions.registerWidget(widgetId);
+      Reactions.send('answer', answerId);
     }
   };
 
@@ -93,8 +95,8 @@ export const ChooseAnswerWidget: React.FC<Props> = ({
 
   const elementSizes = React.useMemo(
     () => ({
-      widget: {
-        borderRadius: calculate(INIT_ELEMENT_STYLES.widget.borderRadius),
+      container: {
+        borderRadius: calculate(INIT_ELEMENT_STYLES.container.borderRadius),
       },
       header: {
         paddingTop: calculate(INIT_ELEMENT_STYLES.header.paddingTop),
@@ -145,7 +147,7 @@ export const ChooseAnswerWidget: React.FC<Props> = ({
             },
           ],
         },
-        elementSizes.widget,
+        elementSizes.container,
       ]}
     >
       <View

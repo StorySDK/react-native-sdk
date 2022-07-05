@@ -1,25 +1,29 @@
 import React from 'react';
 import { Image, Pressable, Linking } from 'react-native';
 import type { ClickMeWidgetParamsType } from '../types';
+import Reactions from '../core/Reactions';
 
 interface Props {
   params: ClickMeWidgetParamsType;
   widgetImage: string;
-
-  onClick?(): void;
+  widgetId: string;
 }
 
 export const ClickMeWidget: React.FC<Props> = ({
   params,
   widgetImage,
-  onClick,
+  widgetId,
 }) => {
-  const handlePress = async () => {
-    onClick && onClick();
-    const supported = await Linking.canOpenURL(params.url);
+  const handlePress = () => {
+    Reactions.registerWidget(widgetId);
+    Reactions.send('click');
 
-    if (supported) {
-      await Linking.openURL(params.url);
+    if (params.url) {
+      Linking.canOpenURL(params.url).then((can) => {
+        if (can) {
+          Linking.openURL(params.url);
+        }
+      });
     }
   };
 

@@ -9,17 +9,17 @@ import type {
 import Emoji from '../components/Emoji';
 import { useSpiritAnim } from '../hooks';
 import { stylesUtils } from '../utils';
+import Reactions from '../core/Reactions';
 
 interface Props {
   params: SliderWidgetParamsType;
   position: WidgetPositionType;
   positionLimits: WidgetPositionLimitsType;
-
-  onSlide?(value: number): void;
+  widgetId: string;
 }
 
 const INIT_ELEMENT_STYLES = {
-  widget: {
+  container: {
     borderRadius: 10,
   },
   emoji: {
@@ -38,9 +38,9 @@ const INIT_ELEMENT_STYLES = {
 
 export const SliderWidget: React.FC<Props> = ({
   params,
-  onSlide,
   position,
   positionLimits,
+  widgetId,
 }) => {
   const [value, setValue] = useState(params.value || 0);
   const [status, setStatus] = useState<'init' | 'moving' | 'moved'>('init');
@@ -56,8 +56,8 @@ export const SliderWidget: React.FC<Props> = ({
 
   const elementSizes = React.useMemo(
     () => ({
-      widget: {
-        borderRadius: calculate(INIT_ELEMENT_STYLES.widget.borderRadius),
+      container: {
+        borderRadius: calculate(INIT_ELEMENT_STYLES.container.borderRadius),
       },
       emoji: {
         width: calculate(INIT_ELEMENT_STYLES.emoji.width),
@@ -88,7 +88,9 @@ export const SliderWidget: React.FC<Props> = ({
   const handleSlidingComplete = () => {
     setStatus('moved');
     startAnim();
-    onSlide && onSlide(value);
+
+    Reactions.registerWidget(widgetId);
+    Reactions.send('answer', value);
   };
 
   const renderAboveThumbComponent = () => {
@@ -121,7 +123,7 @@ export const SliderWidget: React.FC<Props> = ({
     <View
       style={[
         styles.container,
-        elementSizes.widget,
+        elementSizes.container,
         { backgroundColor: stylesUtils.getThemeColor(params.color) },
       ]}
     >

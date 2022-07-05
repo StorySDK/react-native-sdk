@@ -8,13 +8,13 @@ import type {
 import Emoji from '../components/Emoji';
 import { useSpiritAnim } from '../hooks';
 import { stylesUtils } from '../utils';
+import Reactions from '../core/Reactions';
 
 interface Props {
   params: EmojiReactionWidgetParamsType;
   position: WidgetPositionType;
   positionLimits: WidgetPositionLimitsType;
-
-  onReact?(): void;
+  widgetId: string;
 }
 
 interface EmojiButtonProps {
@@ -24,13 +24,32 @@ interface EmojiButtonProps {
   onPress(): void;
 
   disabled?: boolean;
+  style: any;
 }
+
+const INIT_ELEMENT_STYLES = {
+  widget: {
+    borderRadius: 50,
+    paddingTop: 14,
+    paddingBottom: 14,
+    paddingRight: 11,
+    paddingLeft: 11,
+  },
+  emoji: {
+    width: 34,
+  },
+  item: {
+    marginRight: 11,
+    marginLeft: 11,
+  },
+};
 
 const EmojiButton: React.FC<EmojiButtonProps> = ({
   name,
   unicode,
   onPress,
   disabled,
+  style,
 }) => {
   const { animStyles, startAnim } = useSpiritAnim();
 
@@ -42,7 +61,7 @@ const EmojiButton: React.FC<EmojiButtonProps> = ({
   };
 
   return (
-    <Pressable key={name} style={styles.item} onPress={handlePress}>
+    <Pressable key={name} style={[styles.item, style]} onPress={handlePress}>
       <Animated.View style={{ position: 'absolute', ...animStyles }}>
         <Emoji size={32} emoji={unicode} />
       </Animated.View>
@@ -51,18 +70,61 @@ const EmojiButton: React.FC<EmojiButtonProps> = ({
   );
 };
 
-export const EmojiReactionWidget: React.FC<Props> = ({ params }) => {
+export const EmojiReactionWidget: React.FC<Props> = ({
+  params,
+  widgetId,
+  position,
+  positionLimits,
+}) => {
   const [selectedEmoji, setEmoji] = React.useState<string | null>(null);
 
   const handleSelectEmoji = (emojiName: string) => () => {
     setEmoji(emojiName);
+    Reactions.registerWidget(widgetId);
+    Reactions.send('answer', emojiName);
   };
+
+  const calculate = React.useCallback(
+    (size) => {
+      if (position && positionLimits) {
+        return stylesUtils.calculateElementSizeByHeight(
+          position,
+          positionLimits,
+          size
+        );
+      }
+
+      return size;
+    },
+    [position, positionLimits]
+  );
+
+  const elementSizes = React.useMemo(
+    () => ({
+      widget: {
+        borderRadius: calculate(INIT_ELEMENT_STYLES.widget.borderRadius),
+        paddingTop: calculate(INIT_ELEMENT_STYLES.widget.paddingTop),
+        paddingBottom: calculate(INIT_ELEMENT_STYLES.widget.paddingBottom),
+        paddingRight: calculate(INIT_ELEMENT_STYLES.widget.paddingRight),
+        paddingLeft: calculate(INIT_ELEMENT_STYLES.widget.paddingLeft),
+      },
+      emoji: {
+        width: calculate(INIT_ELEMENT_STYLES.emoji.width),
+      },
+      item: {
+        marginRight: calculate(INIT_ELEMENT_STYLES.item.marginRight),
+        marginLeft: calculate(INIT_ELEMENT_STYLES.item.marginLeft),
+      },
+    }),
+    [calculate]
+  );
 
   return (
     <View
       style={[
         styles.container,
         { backgroundColor: stylesUtils.getThemeColor(params.color) },
+        elementSizes.widget,
       ]}
     >
       {params.emoji.map(({ unicode, name }) => (
@@ -72,6 +134,7 @@ export const EmojiReactionWidget: React.FC<Props> = ({ params }) => {
           unicode={unicode}
           onPress={handleSelectEmoji(name)}
           disabled={!!selectedEmoji}
+          style={elementSizes.item}
         />
       ))}
     </View>
@@ -86,16 +149,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: 50,
-    padding: 16,
-    paddingLeft: 20,
-    paddingRight: 20,
     shadowColor: '#000000',
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 5,
   },
-  item: {
-    marginRight: 12,
-  },
+  item: {},
 });

@@ -9,9 +9,10 @@ import {
   Pressable,
   StatusBar,
 } from 'react-native';
-import type { GroupType, StoryType } from '../types';
+import type { GroupType, PlayStatusType, StoryType } from '../types';
 import { StoryContent } from './StoryContent';
 import { CloseIcon } from '../icons';
+import StoryContext from '../core/StoryContext';
 
 interface StoryModalProps {
   stories: StoryType[];
@@ -74,11 +75,21 @@ export const StoryModal: React.FC<StoryModalProps> = (props) => {
   } = props;
 
   const [currentStory, setCurrentStory] = React.useState(0);
-  const [paused] = React.useState(false);
-
-  React.useEffect(() => {
-    setCurrentStory(0);
-  }, [group.id]);
+  const [playStatus, setPlayStatus] = React.useState<PlayStatusType>('wait');
+  const [contentShift, setContentShift] = React.useState(0);
+  const [foregroundWidget, setForegroundWidget] = React.useState<null | string>(
+    null
+  );
+  console.log(contentShift);
+  // React.useEffect(() => {
+  //   if (showed) {
+  //     setPlayStatus('play');
+  //   } else {
+  //     setPlayStatus('wait');
+  //   }
+  //
+  //   // setCurrentStory(0);
+  // }, [showed, stories]);
 
   const MemoAnimatedIndicator = React.memo(AnimatedIndicator);
 
@@ -110,59 +121,91 @@ export const StoryModal: React.FC<StoryModalProps> = (props) => {
 
   const handleTouchEnd = () => {};
 
-  return (
-    <View
-      style={styles.container}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
-      {showed && <StatusBar backgroundColor="#000" barStyle="light-content" />}
-      <View style={styles.content}>
-        {stories
-          .filter((_story, index) => index === currentStory)
-          .map((story) => (
-            <StoryContent
-              key={story.id}
-              story={story}
-              onNext={handleNext}
-              onPrev={handlePreview}
-            />
-          ))}
-      </View>
-      {/*{showed && <StatusBar style="dark" />}*/}
-      <Pressable style={[styles.closeBtn]} onPress={handleClose}>
-        <CloseIcon />
-      </Pressable>
-      <View style={[styles.group]}>
-        <Image style={styles.groupImg} source={{ uri: group.imageUrl }} />
-        <Text style={styles.groupTitle}>{group.title}</Text>
-        <Text style={styles.groupDate}>3h</Text>
-      </View>
-      <View style={styles.indicatorContainer}>
-        {stories.map((_story, index) => (
-          <View
-            key={_story.id}
-            style={[
-              styles.indicator,
-              {
-                backgroundColor:
-                  index < currentStory
-                    ? 'rgba(255, 255, 255, 0.7)'
-                    : 'rgba(255, 255, 255, 0.3)',
-              },
-            ]}
-          >
-            {index === currentStory && (
-              <MemoAnimatedIndicator
-                onEnd={handleAnimationEnd}
-                groupId={group.id}
-                paused={paused}
-              />
-            )}
-          </View>
-        ))}
-      </View>
+  const FallbackText: React.FC = ({ children }) => (
+    <View style={styles.fallbackContent}>
+      <Text style={styles.fallbackText}>{children}</Text>
     </View>
+  );
+
+  const hide = {
+    opacity: foregroundWidget ? 0 : 1,
+  };
+
+  return (
+    <StoryContext.Provider
+      value={{
+        playStatusChange: setPlayStatus,
+        setContentShift,
+        setForegroundWidget,
+      }}
+    >
+      <View
+        style={styles.container}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        {showed && (
+          <StatusBar backgroundColor="#000" barStyle="light-content" />
+        )}
+        <View
+          style={[
+            styles.content,
+            {
+              transform: [
+                {
+                  translateY: contentShift,
+                },
+              ],
+            },
+          ]}
+        >
+          {stories.length === 0 && <FallbackText>No story</FallbackText>}
+          {stories
+            .filter((_story, index) => index === currentStory)
+            .map((story) => (
+              <StoryContent
+                key={story.id}
+                foregroundWidget={foregroundWidget}
+                story={story}
+                onNext={handleNext}
+                onPrev={handlePreview}
+              />
+            ))}
+        </View>
+        <Pressable style={[styles.closeBtn, hide]} onPress={handleClose}>
+          <CloseIcon />
+        </Pressable>
+        <View style={[styles.group, hide]}>
+          <Image style={styles.groupImg} source={{ uri: group.imageUrl }} />
+          <Text style={styles.groupTitle}>{group.title}</Text>
+          <Text style={styles.groupDate}>4h</Text>
+        </View>
+        <View style={[styles.indicatorContainer, hide]}>
+          {stories.map((_story, index) => (
+            <View
+              key={_story.id}
+              style={[
+                styles.indicator,
+                {
+                  backgroundColor:
+                    index < currentStory
+                      ? 'rgba(255, 255, 255, 0.7)'
+                      : 'rgba(255, 255, 255, 0.3)',
+                },
+              ]}
+            >
+              {index === currentStory && (
+                <MemoAnimatedIndicator
+                  onEnd={handleAnimationEnd}
+                  groupId={group.id}
+                  paused={playStatus === 'pause'}
+                />
+              )}
+            </View>
+          ))}
+        </View>
+      </View>
+    </StoryContext.Provider>
   );
 };
 
@@ -178,6 +221,16 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     flexDirection: 'row',
+  },
+  fallbackContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fallbackText: {
+    color: '#9a9a9a',
+    fontSize: 16,
   },
   closeBtn: {
     position: 'absolute',

@@ -1,14 +1,13 @@
 import * as React from 'react';
 import { StyleSheet, Image, Text, View } from 'react-native';
+import type { GroupItemProps } from '../types';
 
-interface Props {
-  imageUrl: string;
-  title: string;
-  style: 'circle' | 'square' | 'bigSquare' | 'rectangle';
-  active?: boolean;
-}
-
-const GroupItem: React.FC<Props> = ({ imageUrl, title, style, active }) => {
+const GroupItem: React.FC<GroupItemProps> = ({
+  imageUrl,
+  title,
+  style,
+  active,
+}) => {
   return (
     <View style={[styles.container, themed.container[style]]}>
       <View

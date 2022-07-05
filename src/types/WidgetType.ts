@@ -97,7 +97,7 @@ export type WidgetPositionLimitsType = {
 };
 
 export interface WidgetObjectType {
-  id: string | number;
+  id: string;
   position: WidgetPositionType;
   positionLimits: WidgetPositionLimitsType;
   content: WidgetContentType;

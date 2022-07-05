@@ -4,16 +4,15 @@ import { WidgetsTypes } from '../types';
 import {
   ChooseAnswerWidget,
   ClickMeWidget,
-  EllipseWidget,
   EmojiReactionWidget,
   GiphyWidget,
   QuestionWidget,
-  RectangleWidget,
   SliderWidget,
   SwipeUpWidget,
   TalkAboutWidget,
   TextWidget,
   TimerWidget,
+  FigureWidget,
 } from '../widgets';
 
 interface WidgetFactoryProps {
@@ -30,26 +29,31 @@ export class WidgetFactory extends React.Component<WidgetFactoryProps> {
             params={this.props.widget.content.params}
             position={this.props.widget.position}
             positionLimits={this.props.widget.positionLimits}
-            onAnswer={this.props.widget.action}
+            widgetId={this.props.widget.id}
           />
         );
       case WidgetsTypes.CLICK_ME:
         return (
           <ClickMeWidget
             params={this.props.widget.content.params}
-            onClick={this.props.widget.action}
+            widgetId={this.props.widget.id}
             widgetImage={this.props.widget.content.widgetImage}
           />
         );
       case WidgetsTypes.ELLIPSE:
-        return <EllipseWidget params={this.props.widget.content.params} />;
+        return (
+          <FigureWidget
+            params={this.props.widget.content.params}
+            type="ellipse"
+          />
+        );
       case WidgetsTypes.EMOJI_REACTION:
         return (
           <EmojiReactionWidget
             params={this.props.widget.content.params}
             position={this.props.widget.position}
             positionLimits={this.props.widget.positionLimits}
-            onReact={this.props.widget.action}
+            widgetId={this.props.widget.id}
           />
         );
       case WidgetsTypes.GIPHY:
@@ -60,26 +64,31 @@ export class WidgetFactory extends React.Component<WidgetFactoryProps> {
             params={this.props.widget.content.params}
             position={this.props.widget.position}
             positionLimits={this.props.widget.positionLimits}
-            onAnswer={this.props.widget.action}
+            widgetId={this.props.widget.id}
           />
         );
       case WidgetsTypes.RECTANGLE:
-        return <RectangleWidget params={this.props.widget.content.params} />;
+        return (
+          <FigureWidget
+            params={this.props.widget.content.params}
+            type="rectangle"
+          />
+        );
       case WidgetsTypes.SLIDER:
         return (
           <SliderWidget
             params={this.props.widget.content.params}
             position={this.props.widget.position}
             positionLimits={this.props.widget.positionLimits}
-            onSlide={this.props.widget.action}
+            widgetId={this.props.widget.id}
           />
         );
       case WidgetsTypes.SWIPE_UP:
         return (
           <SwipeUpWidget
             params={this.props.widget.content.params}
-            onSwipe={this.props.widget.action}
             widgetImage={this.props.widget.content.widgetImage}
+            widgetId={this.props.widget.id}
           />
         );
       case WidgetsTypes.TALK_ABOUT:
@@ -88,7 +97,7 @@ export class WidgetFactory extends React.Component<WidgetFactoryProps> {
             params={this.props.widget.content.params}
             position={this.props.widget.position}
             positionLimits={this.props.widget.positionLimits}
-            onAnswer={this.props.widget.action}
+            widgetId={this.props.widget.id}
           />
         );
       case WidgetsTypes.TEXT:

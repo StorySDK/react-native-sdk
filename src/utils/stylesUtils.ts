@@ -124,13 +124,41 @@ export const stylesUtils = {
       case 'yellow':
         return '#05051d';
       case 'black':
-        return '#05051d';
+        return '#ffffff';
       case 'red':
         return '#ffffff';
       case 'grey':
         return '#05051d';
       default:
         return '#05051d';
+    }
+  },
+  getThemeOpacityColor(color: string) {
+    switch (color) {
+      case 'purple':
+        return '#ffffff26';
+      case 'blue':
+        return '#ffffff26';
+      case 'darkBlue':
+        return '#ffffff26';
+      case 'white':
+        return '#ebebeb';
+      case 'green':
+        return '#ffffff26';
+      case 'orange':
+        return '#ffffff26';
+      case 'orangeRed':
+        return '#ffffff26';
+      case 'yellow':
+        return '#ffffff26';
+      case 'black':
+        return '#ffffff26';
+      case 'red':
+        return '#ffffff26';
+      case 'grey':
+        return '#ffffff26';
+      default:
+        return '#ffffff26';
     }
   },
 };
