@@ -1,9 +1,10 @@
 import * as React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Modal from 'react-native-modal';
+import CubeNavigation from './CubeNavigation';
 import type { GroupType } from '../types';
 import { GroupItemProps, LoadingStatus } from '../types';
-import StoryModal from './StoryModal';
-import Modal from 'react-native-modal';
+import StoriesList from './StoriesList';
 import Reactions from '../core/Reactions';
 import GroupItem from './GroupItem';
 
@@ -39,7 +40,6 @@ const skeleton = StyleSheet.create({
 const GroupsList = (props: GroupsListProps) => {
   const { groups, style = 'circle', status, renderGroupItem } = props;
   const [viewed, setViewed] = React.useState<number[]>([]);
-
   const [currentGroup, setCurrentGroup] = React.useState(0);
   const [modalShow, setModalShow] = React.useState(false);
 
@@ -49,37 +49,36 @@ const GroupsList = (props: GroupsListProps) => {
     setModalShow(true);
     Reactions.registerGroup(groups[groupIndex].id);
   };
+  console.log('currentGroup', currentGroup);
 
   const handlePreviewGroup = () => {
+    console.log('handlePreviewGroup', currentGroup);
     if (currentGroup > 0) {
-      setCurrentGroup(currentGroup - 1);
-      setViewed([...viewed, currentGroup - 1]);
+      const prevIndex = currentGroup - 1;
+      setCurrentGroup(prevIndex);
+      setViewed([...viewed, prevIndex]);
+    } else {
+      handleCloseModal();
     }
   };
 
   const handleNextGroup = () => {
     if (currentGroup < groups.length - 1) {
-      setCurrentGroup(currentGroup + 1);
-      setViewed([...viewed, currentGroup + 1]);
+      const nextIndex = currentGroup + 1;
+      setCurrentGroup(nextIndex);
+      setViewed([...viewed, nextIndex]);
+    } else {
+      handleCloseModal();
     }
+  };
+
+  const handleSwipe = (page: number) => {
+    setCurrentGroup(page);
   };
 
   const handleCloseModal = () => {
     setModalShow(false);
   };
-
-  const StoryModalMemo = React.memo(() => (
-    <StoryModal
-      stories={groups[currentGroup].stories}
-      group={groups[currentGroup]}
-      onClose={handleCloseModal}
-      onNextGroup={handleNextGroup}
-      onPreviewGroup={handlePreviewGroup}
-      showed={modalShow}
-      isFirstGroup={currentGroup === 0}
-      isLastGroup={currentGroup === groups.length - 1}
-    />
-  ));
 
   return (
     <>
@@ -115,13 +114,24 @@ const GroupsList = (props: GroupsListProps) => {
       <Modal
         isVisible={modalShow}
         style={styles.modal}
-        onSwipeComplete={handleCloseModal}
         onBackButtonPress={handleCloseModal}
         backdropOpacity={1}
         statusBarTranslucent={false}
-        swipeDirection="down"
+        useNativeDriver
       >
-        <StoryModalMemo />
+        <CubeNavigation currentPage={currentGroup} onSwipe={handleSwipe}>
+          {groups.map((group, i) => (
+            <StoriesList
+              key={group.id}
+              group={group}
+              isCurrentGroup={currentGroup === i}
+              onClose={handleCloseModal}
+              onNextGroup={handleNextGroup}
+              onPreviewGroup={handlePreviewGroup}
+              showed={modalShow}
+            />
+          ))}
+        </CubeNavigation>
       </Modal>
     </>
   );

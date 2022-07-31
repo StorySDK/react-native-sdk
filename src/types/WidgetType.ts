@@ -27,19 +27,16 @@ export type WidgetContentType =
       type: WidgetsTypes.CHOOSE_ANSWER;
       id: string | number;
       params: ChooseAnswerWidgetParamsType;
-      onAnswer(): void;
     }
   | {
       type: WidgetsTypes.EMOJI_REACTION;
       id: string | number;
       params: EmojiReactionWidgetParamsType;
-      onReact(): void;
     }
   | {
       type: WidgetsTypes.TALK_ABOUT;
       id: string | number;
       params: TalkAboutWidgetParamsType;
-      onAnswer(): void;
     }
   | {
       type: WidgetsTypes.CLICK_ME;

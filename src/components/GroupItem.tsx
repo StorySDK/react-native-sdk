@@ -87,11 +87,13 @@ const themed = {
       position: 'absolute',
       bottom: 10,
       left: 10,
+      width: 68,
     },
     rectangle: {
       position: 'absolute',
       bottom: 10,
       left: 10,
+      width: 50,
     },
   },
   title: {
@@ -114,8 +116,9 @@ const styles = StyleSheet.create({
   },
   textWrapper: {},
   title: {
+    flexShrink: 1,
     fontFamily: 'Inter-Bold',
-    fontWeight: '600',
+    fontWeight: 'bold',
     fontSize: 10,
     color: '#2b1e2a',
     marginTop: 6,

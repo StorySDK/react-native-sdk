@@ -1,17 +1,18 @@
 import React from 'react';
+import type { PlayStatusType } from '../types';
 
 const StoryContext = React.createContext<{
   currentStoryId?: string;
   playStatusChange?: any;
-  setContentShift?: any;
   setForegroundWidget?: any;
-  confetti?: any;
+  foregroundWidget: string | null;
+  playStatus: PlayStatusType;
 }>({
   currentStoryId: '',
+  playStatus: 'play',
   playStatusChange: () => {},
-  setContentShift() {},
   setForegroundWidget() {},
-  confetti: null,
+  foregroundWidget: null,
 });
 
 export default StoryContext;

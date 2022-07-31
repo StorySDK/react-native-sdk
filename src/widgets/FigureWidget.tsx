@@ -21,11 +21,14 @@ export const FigureWidget: React.FC<RectangleProps | EllipseProps> = ({
   params,
   type,
 }) => {
-  const borderStyles = {
-    borderColor: params.strokeColor.value,
-    borderWidth: params.strokeThickness,
-    borderRadius: type === 'rectangle' ? params.fillBorderRadius : 5000,
-  };
+  const borderRadius = type === 'rectangle' ? params.fillBorderRadius : 5000;
+  const borderStyles = params.hasBorder
+    ? {
+        borderColor: params.strokeColor.value,
+        borderWidth: params.strokeThickness,
+        borderRadius,
+      }
+    : { borderRadius };
 
   if (params.fillColor.type === 'gradient') {
     return (

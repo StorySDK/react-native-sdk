@@ -12,6 +12,7 @@ export type RectangleWidgetParamsType = {
   strokeThickness: number;
   strokeColor: { type: string; value: string };
   strokeOpacity: number;
+  hasBorder: boolean;
 };
 
 export type EllipseWidgetParamsType = {
@@ -20,6 +21,7 @@ export type EllipseWidgetParamsType = {
   strokeThickness: number;
   strokeColor: { type: string; value: string };
   strokeOpacity: number;
+  hasBorder: boolean;
 };
 
 export type ClickMeWidgetParamsType = {

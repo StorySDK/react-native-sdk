@@ -27,7 +27,6 @@ class Service {
 
   async fetchStoriesByGroupId(groupId: string): Promise<StoryType[]> {
     const storiesResponse = await axios.get(`/groups/${groupId}/stories`);
-    console.log(groupId);
     return storiesResponse.data.data.map((story: any) => ({
       id: story.id,
       storyData: story.story_data.widgets,
