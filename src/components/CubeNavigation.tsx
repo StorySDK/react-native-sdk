@@ -1,5 +1,6 @@
+// legacy :(
+// @ts-nocheck
 import React from 'react';
-import PropTypes from 'prop-types';
 import {
   PanResponder,
   Animated,
@@ -14,7 +15,7 @@ const TR_POSITION = Platform.OS === 'ios' ? 2 : 1.5;
 
 interface Props {
   currentPage: number;
-  onSwipe(page: number): void;
+  onSwipe(page: string): void;
 
   callBackAfterSwipe?(e: any): void;
   callbackOnSwipe?(e: any): void;
@@ -77,10 +78,13 @@ class CubeNavigationHorizontal extends React.Component<Props, State> {
 
     this._panResponder = PanResponder.create({
       onMoveShouldSetResponderCapture: () => true,
+      // eslint-disable-next-line no-dupe-keys
       onMoveShouldSetResponderCapture: () =>
+        // eslint-disable-next-line no-undef
         Math.abs(gestureState.dx) > this.props.responderCaptureDx,
       onMoveShouldSetPanResponderCapture: (evt, gestureState) =>
         Math.abs(gestureState.dx) > this.props.responderCaptureDx,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       onPanResponderGrant: (e, gestureState) => {
         if (this.props.callbackOnSwipe) {
           this.props.callbackOnSwipe(true);
