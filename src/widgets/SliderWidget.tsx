@@ -21,6 +21,7 @@ interface Props {
 const INIT_ELEMENT_STYLES = {
   container: {
     borderRadius: 10,
+    padding: 20,
   },
   emoji: {
     width: 30,
@@ -30,8 +31,13 @@ const INIT_ELEMENT_STYLES = {
     fontSize: 16,
     marginBottom: 15,
   },
-  slider: {
+  track: {
     height: 11,
+    borderRadius: 6,
+  },
+  thumb: {
+    width: 30,
+    height: 30,
     borderRadius: 6,
   },
 };
@@ -58,6 +64,7 @@ export const SliderWidget: React.FC<Props> = ({
     () => ({
       container: {
         borderRadius: calculate(INIT_ELEMENT_STYLES.container.borderRadius),
+        padding: calculate(INIT_ELEMENT_STYLES.container.padding),
       },
       emoji: {
         width: calculate(INIT_ELEMENT_STYLES.emoji.width),
@@ -66,17 +73,22 @@ export const SliderWidget: React.FC<Props> = ({
         fontSize: calculate(INIT_ELEMENT_STYLES.text.fontSize),
         marginBottom: calculate(INIT_ELEMENT_STYLES.text.marginBottom),
       },
-      slider: {
-        height: calculate(INIT_ELEMENT_STYLES.slider.height),
-        borderRadius: calculate(INIT_ELEMENT_STYLES.slider.borderRadius),
+      track: {
+        height: calculate(INIT_ELEMENT_STYLES.track.height),
+        borderRadius: calculate(INIT_ELEMENT_STYLES.track.borderRadius),
+      },
+      thumb: {
+        height: calculate(INIT_ELEMENT_STYLES.thumb.height),
+        width: calculate(INIT_ELEMENT_STYLES.thumb.width),
       },
     }),
     [calculate]
   );
 
   const handleValueChange = (newValue: number | Array<number>) => {
-    // @ts-ignore
-    setValue(newValue);
+    const val = newValue as number;
+
+    setValue(val);
   };
 
   const handleSlidingStart = () => {
@@ -147,8 +159,8 @@ export const SliderWidget: React.FC<Props> = ({
         renderThumbComponent={renderThumbComponent}
         disabled={status === 'moved'}
         minimumTrackTintColor="#FF00D0"
-        trackStyle={styles.track}
-        thumbStyle={styles.thumb}
+        trackStyle={{ ...styles.track, ...elementSizes.track }}
+        thumbStyle={{ ...styles.thumb, ...elementSizes.thumb }}
       />
     </View>
   );
@@ -159,9 +171,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 20,
-    paddingBottom: 30,
     shadowOffset: {
       width: 0,
       height: 0,
@@ -173,20 +182,14 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#000',
-    fontSize: 16,
     textAlign: 'center',
     fontWeight: '500',
-    marginBottom: 15,
   },
   track: {
     width: '100%',
-    height: 11,
     backgroundColor: 'hsla(0,0%,39.2%,.25)',
-    borderRadius: 10,
   },
   thumb: {
-    width: 30,
-    height: 30,
     backgroundColor: 'transparent',
   },
 });

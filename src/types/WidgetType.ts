@@ -84,6 +84,7 @@ export type WidgetPositionType = {
 
 export type WidgetPositionLimitsType = {
   isAutoHeight: boolean;
+  isAutoWidth: boolean;
   isResizableX: boolean;
   isResizableY: boolean;
   isRotatable: boolean;

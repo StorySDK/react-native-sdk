@@ -40,6 +40,12 @@ const Story: React.FC<Props> = (props) => {
     }
   }, [isCurrentGroup]);
 
+  React.useEffect(() => {
+    if (foregroundWidget) {
+      setPlayStatus('pause');
+    }
+  }, [foregroundWidget]);
+
   const handleTouchStart = () => {
     pressTimout = setTimeout(() => {
       setPlayStatus('pause');

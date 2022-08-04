@@ -49,10 +49,8 @@ const GroupsList = (props: GroupsListProps) => {
     setModalShow(true);
     Reactions.registerGroup(groups[groupIndex].id);
   };
-  console.log('currentGroup', currentGroup);
 
   const handlePreviewGroup = () => {
-    console.log('handlePreviewGroup', currentGroup);
     if (currentGroup > 0) {
       const prevIndex = currentGroup - 1;
       setCurrentGroup(prevIndex);
@@ -72,8 +70,8 @@ const GroupsList = (props: GroupsListProps) => {
     }
   };
 
-  const handleSwipe = (page: number) => {
-    setCurrentGroup(page);
+  const handleSwipe = (page: string) => {
+    setCurrentGroup(parseInt(page, 10));
   };
 
   const handleCloseModal = () => {

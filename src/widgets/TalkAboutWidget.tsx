@@ -1,5 +1,12 @@
 import React from 'react';
-import { StyleSheet, View, TextInput, Text, Image } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  TextInput,
+  Text,
+  Image,
+  Pressable,
+} from 'react-native';
 import type {
   TalkAboutWidgetParamsType,
   WidgetPositionLimitsType,
@@ -58,6 +65,8 @@ export const TalkAboutWidget: React.FC<Props> = (props) => {
   const { params, position, positionLimits, widgetId } = props;
 
   const storyContextVal = React.useContext(StoryContext);
+  const [text, setText] = React.useState('');
+  const ref = React.useRef<any>(null);
 
   const calculate = React.useCallback(
     (size) => {
@@ -120,19 +129,15 @@ export const TalkAboutWidget: React.FC<Props> = (props) => {
     [calculate, params.color]
   );
 
-  const [text, setText] = React.useState('');
+  const handlePress = () => {
+    if (ref) {
+      ref.current.focus();
+    }
+  };
 
   const handleFocus = () => {
-    // const widgetBottomPoint = (position.y + position.height) / PixelRatio.get();
-    // const keyboardTopPoint = 1920 / PixelRatio.get() - 280;
-
     storyContextVal.playStatusChange('pause');
     storyContextVal.setForegroundWidget(widgetId);
-    // storyContextVal.setContentShift(
-    //   widgetBottomPoint >= keyboardTopPoint
-    //     ? keyboardTopPoint - widgetBottomPoint
-    //     : 0
-    // );
   };
 
   const handleBlur = () => {
@@ -140,11 +145,13 @@ export const TalkAboutWidget: React.FC<Props> = (props) => {
     Reactions.send('answer', text);
     storyContextVal.playStatusChange('play');
     storyContextVal.setForegroundWidget(null);
-    // storyContextVal.setContentShift(0);
   };
 
   return (
-    <View style={[styles.container, elementSizes.container]}>
+    <Pressable
+      onPress={handlePress}
+      style={[styles.container, elementSizes.container]}
+    >
       <View style={[styles.card, elementSizes.card]}>
         <Image
           source={{
@@ -155,6 +162,7 @@ export const TalkAboutWidget: React.FC<Props> = (props) => {
         />
         <Text style={[styles.title, elementSizes.title]}>{params.text}</Text>
         <TextInput
+          ref={ref}
           style={[styles.field, elementSizes.input]}
           placeholder="Enter text..."
           onChangeText={setText}
@@ -162,7 +170,7 @@ export const TalkAboutWidget: React.FC<Props> = (props) => {
           onBlur={handleBlur}
         />
       </View>
-    </View>
+    </Pressable>
   );
 };
 

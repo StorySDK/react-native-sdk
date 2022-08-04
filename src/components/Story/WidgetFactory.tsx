@@ -1,6 +1,6 @@
 import React from 'react';
-import type { WidgetObjectType } from '../types';
-import { WidgetsTypes } from '../types';
+import type { WidgetObjectType } from '../../types';
+import { WidgetsTypes } from '../../types';
 import {
   ChooseAnswerWidget,
   ClickMeWidget,
@@ -13,7 +13,7 @@ import {
   TextWidget,
   TimerWidget,
   FigureWidget,
-} from '../widgets';
+} from '../../widgets';
 
 interface WidgetFactoryProps {
   storyId: string;
@@ -105,6 +105,8 @@ export class WidgetFactory extends React.Component<WidgetFactoryProps> {
           <TextWidget
             params={this.props.widget.content.params}
             widgetImage={this.props.widget.content.widgetImage}
+            position={this.props.widget.position}
+            positionLimits={this.props.widget.positionLimits}
           />
         );
       case WidgetsTypes.TIMER:

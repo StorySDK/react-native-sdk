@@ -39,7 +39,6 @@ const StorySDKComponent: React.FC<StorySDKComponentProps> = ({
 
       Service.fetchGroupStories(groupsResponse).then((_groups) => {
         setGroups(_groups);
-        console.log(_groups);
       });
     });
   }, [locale, token, reload]);

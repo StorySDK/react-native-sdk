@@ -21,7 +21,7 @@ export const StoriesList: React.FC<StoryModalProps> = (props) => {
     onNextGroup,
     onPreviewGroup,
   } = props;
-
+  console.log('isCurrentGroup', isCurrentGroup);
   const [currentStory, setCurrentStory] = React.useState(0);
 
   const handleClose = () => {

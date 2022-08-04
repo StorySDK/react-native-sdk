@@ -1,20 +1,30 @@
 import React from 'react';
-import { Image } from 'react-native';
-import type { TextWidgetParamsType } from '../types';
+import { Image, PixelRatio } from 'react-native';
+import type {
+  TextWidgetParamsType,
+  WidgetPositionLimitsType,
+  WidgetPositionType,
+} from '../types';
 
 interface Props {
   params: TextWidgetParamsType;
+  position: WidgetPositionType;
+  positionLimits: WidgetPositionLimitsType;
   widgetImage: string;
 }
 
-export const TextWidget: React.FC<Props> = ({ widgetImage }) => {
+export const TextWidget: React.FC<Props> = (props) => {
+  const { widgetImage, position } = props;
+
   return (
     <Image
       source={{ uri: widgetImage }}
-      style={{
-        width: '100%',
-        height: '100%',
-      }}
+      style={[
+        {
+          width: position.width / PixelRatio.get(),
+          height: position.height / PixelRatio.get(),
+        },
+      ]}
     />
   );
 };

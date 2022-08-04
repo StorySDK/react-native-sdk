@@ -6,8 +6,8 @@ import {
   PixelRatio,
   StyleSheet,
 } from 'react-native';
-import type { WidgetObjectType } from '../types';
-import { useKeyboardHeight } from '../hooks';
+import type { WidgetObjectType } from '../../types';
+import { useKeyboardHeight } from '../../hooks';
 
 interface WidgetAnimationProps {
   play?: boolean;
@@ -31,7 +31,7 @@ const WidgetAnimation: React.FC<WidgetAnimationProps> = (props) => {
         easing: Easing.out(Easing.quad),
         useNativeDriver: true,
         toValue: 1,
-        duration: 200,
+        duration: 150,
       }).start();
     }
   }, [anim, play]);
@@ -58,7 +58,7 @@ const WidgetAnimation: React.FC<WidgetAnimationProps> = (props) => {
     outputRange: [0, midY - top - height / 2],
   });
 
-  const fullWidth = 800 / PixelRatio.get();
+  const fullWidth = 700 / PixelRatio.get();
   const scale = anim.interpolate({
     inputRange: [0, 1],
     outputRange: [1, fullWidth > width ? fullWidth / width : width / fullWidth],
@@ -72,8 +72,8 @@ const WidgetAnimation: React.FC<WidgetAnimationProps> = (props) => {
         {
           left,
           top,
-          width,
-          height,
+          width: widget.positionLimits.isAutoWidth ? 'auto' : width,
+          height: widget.positionLimits.isAutoHeight ? 'auto' : height,
           transform: [{ rotate }, { translateX }, { translateY }, { scale }],
         },
       ]}

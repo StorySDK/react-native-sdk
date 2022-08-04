@@ -1,17 +1,11 @@
 import React from 'react';
-import {
-  View,
-  Dimensions,
-  StyleSheet,
-  Pressable,
-  PixelRatio,
-} from 'react-native';
+import { View, StyleSheet, Pressable, PixelRatio } from 'react-native';
 import type { StoryType, WidgetObjectType } from '../../types';
-import { WidgetFactory } from '../../core/WidgetFactory';
+import { WidgetFactory } from './WidgetFactory';
 import Reactions from '../../core/Reactions';
-import WidgetAnimation from '../../core/WidgetAnimation';
+import WidgetAnimation from './WidgetAnimation';
 import StoryBackground from './StoryBackground';
-import WidgetErrorBoundary from '../../core/WidgetErrorBoundary';
+import WidgetErrorBoundary from './WidgetErrorBoundary';
 import { WidgetsTypes } from '../../types';
 import StoryContext from '../../core/StoryContext';
 
@@ -43,11 +37,6 @@ const StoryContent: React.FC<StoryContentProps> = (props) => {
     Reactions.registerStory(story.id);
   }, [story.id]);
 
-  const scale = parseFloat((Dimensions.get('window').width / 390).toFixed(3));
-  const translateX = Math.round(Dimensions.get('window').width - 390) / 2;
-  const translateY =
-    (Math.round(Dimensions.get('window').width - 390) / 2) * 1.778;
-
   const interactiveWidgetTypes: WidgetsTypes[] = [
     WidgetsTypes.SWIPE_UP,
     WidgetsTypes.SLIDER,
@@ -68,14 +57,7 @@ const StoryContent: React.FC<StoryContentProps> = (props) => {
   );
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          transform: [{ scale }, { translateX }, { translateY }],
-        },
-      ]}
-    >
+    <View style={[styles.container]}>
       <StoryBackground background={story.background} />
       {notInteractiveWidgets.map(renderWidget)}
       <Pressable
@@ -108,19 +90,18 @@ const styles = StyleSheet.create({
     left: 0,
     top: 60,
     width: '50%',
-    height: Dimensions.get('window').height - 80,
+    height: 1860 / PixelRatio.get(),
   },
   nextHandler: {
     position: 'absolute',
     right: 0,
     top: 60,
     width: '50%',
-    height: Dimensions.get('window').height - 80,
+    height: 1860 / PixelRatio.get(),
   },
   widget: {
     position: 'absolute',
   },
 });
 
-// export default React.memo(StoryContent);
 export default StoryContent;
