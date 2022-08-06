@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Modal from 'react-native-modal';
 import CubeNavigation from './CubeNavigation';
 import type { GroupType } from '../types';
@@ -71,7 +71,10 @@ const GroupsList = (props: GroupsListProps) => {
   };
 
   const handleSwipe = (page: string) => {
-    setCurrentGroup(parseInt(page, 10));
+    const nextIndex = parseInt(page, 10);
+
+    setCurrentGroup(nextIndex);
+    setViewed([...viewed, nextIndex]);
   };
 
   const handleCloseModal = () => {
@@ -80,7 +83,11 @@ const GroupsList = (props: GroupsListProps) => {
 
   return (
     <>
-      <View style={styles.groups}>
+      <ScrollView
+        style={styles.groups}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+      >
         {status === LoadingStatus.LOADED ? (
           groups.map((group, index) => (
             <Pressable
@@ -108,7 +115,7 @@ const GroupsList = (props: GroupsListProps) => {
         ) : (
           <GroupsListSkeleton />
         )}
-      </View>
+      </ScrollView>
       <Modal
         isVisible={modalShow}
         style={styles.modal}
@@ -136,16 +143,8 @@ const GroupsList = (props: GroupsListProps) => {
 };
 
 const styles = StyleSheet.create({
-  groups: {
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    overflow: 'scroll',
-  },
-  group: {
-    alignItems: 'center',
-  },
+  groups: {},
+  group: {},
   modal: {
     margin: 0,
     alignItems: undefined,

@@ -38,7 +38,7 @@ const StorySDKComponent: React.FC<StorySDKComponentProps> = ({
       setStatus(LoadingStatus.LOADED);
 
       Service.fetchGroupStories(groupsResponse).then((_groups) => {
-        setGroups(_groups);
+        setGroups(_groups.filter((group) => group.stories.length > 0));
       });
     });
   }, [locale, token, reload]);

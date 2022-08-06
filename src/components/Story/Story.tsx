@@ -37,6 +37,8 @@ const Story: React.FC<Props> = (props) => {
     setForegroundWidget(null);
     if (isCurrentGroup) {
       setPlayStatus('play');
+    } else {
+      setPlayStatus('wait');
     }
   }, [isCurrentGroup]);
 
