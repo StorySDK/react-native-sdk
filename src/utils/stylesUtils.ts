@@ -3,6 +3,7 @@ import type {
   BackgroundType,
   WidgetPositionLimitsType,
 } from '../types';
+import { Dimensions, PixelRatio } from 'react-native';
 
 export const stylesUtils = {
   hexToRgba(hex: string, alpha?: number) {
@@ -57,14 +58,27 @@ export const stylesUtils = {
     };
   },
 
+  calculateScale(size: number) {
+    const fullHDWidth = 1080;
+    const windowWidth = Dimensions.get('window').width * PixelRatio.get();
+
+    if (windowWidth < fullHDWidth) {
+      return size * (fullHDWidth / windowWidth);
+    }
+
+    return size;
+  },
+
   calculateElementSize(
     position: WidgetPositionType,
     positionLimits: WidgetPositionLimitsType,
     elementSize: number
   ) {
-    return positionLimits.minWidth
-      ? Math.round((elementSize * +position.width) / positionLimits?.minWidth)
-      : elementSize;
+    return stylesUtils.calculateScale(
+      positionLimits.minWidth
+        ? Math.round((elementSize * +position.width) / positionLimits?.minWidth)
+        : elementSize
+    );
   },
 
   calculateElementSizeByHeight(
@@ -72,9 +86,13 @@ export const stylesUtils = {
     positionLimits: WidgetPositionLimitsType,
     elementSize: number
   ) {
-    return positionLimits.minHeight
-      ? Math.round((elementSize * position.height) / positionLimits?.minHeight)
-      : elementSize;
+    return stylesUtils.calculateScale(
+      positionLimits.minHeight
+        ? Math.round(
+            (elementSize * position.height) / positionLimits?.minHeight
+          )
+        : elementSize
+    );
   },
 
   getThemeColor(color: string) {

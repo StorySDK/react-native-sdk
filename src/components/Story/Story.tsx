@@ -1,5 +1,5 @@
 import React from 'react';
-import { PixelRatio, StyleSheet, View } from 'react-native';
+import { Dimensions, PixelRatio, StyleSheet, View } from 'react-native';
 import type { GroupType, StoryType, PlayStatusType } from '../../types';
 import StoryContent from './StoryContent';
 import StoryControls from './StoryControls';
@@ -106,6 +106,15 @@ const styles = StyleSheet.create({
   container: {
     width: 1080 / PixelRatio.get(),
     height: 1920 / PixelRatio.get(),
+    transform: [
+      {
+        scale:
+          Dimensions.get('window').height / Dimensions.get('window').width <=
+          1.77777778
+            ? Dimensions.get('window').height / (1920 / PixelRatio.get())
+            : 1,
+      },
+    ],
   },
   content: {},
   controls: {

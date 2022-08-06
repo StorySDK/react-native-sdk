@@ -1,8 +1,8 @@
 import React from 'react';
 import {
   Animated,
-  Dimensions,
   Image,
+  PixelRatio,
   Pressable,
   StyleSheet,
   Text,
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    left: Dimensions.get('window').width - 40,
+    left: 1080 / PixelRatio.get() - 40,
     top: 18,
     height: 32,
     width: 32,
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'row',
     top: 8,
-    width: Dimensions.get('window').width - 24,
+    width: 1080 / PixelRatio.get() - 24,
     marginLeft: 12,
     marginRight: 10,
     height: 4,
