@@ -15,6 +15,11 @@ interface WidgetAnimationProps {
   widget: WidgetObjectType;
 }
 
+const size = (value: number) =>
+  Dimensions.get('window').width / (1080 / PixelRatio.get()) < 1
+    ? value * (1080 / Dimensions.get('window').width)
+    : value;
+
 const WidgetAnimation: React.FC<WidgetAnimationProps> = (props) => {
   const { widget, play } = props;
   const keyboardHeight = useKeyboardHeight();
@@ -46,13 +51,13 @@ const WidgetAnimation: React.FC<WidgetAnimationProps> = (props) => {
     outputRange: [`${widget.position.rotate}deg`, '0deg'],
   });
 
-  const midX = Dimensions.get('window').width / 2;
+  const midX = size(Dimensions.get('window').width / 2);
   const translateX = anim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, midX - left - width / 2],
   });
 
-  const midY = (Dimensions.get('window').height - keyboardHeight) / 2;
+  const midY = size((Dimensions.get('window').height - keyboardHeight) / 2);
   const translateY = anim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, midY - top - height / 2],

@@ -32,7 +32,7 @@ const Story: React.FC<Props> = (props) => {
   const [foregroundWidget, setForegroundWidget] = React.useState<null | string>(
     null
   );
-  console.log(Dimensions.get('window').width);
+
   React.useEffect(() => {
     setForegroundWidget(null);
     if (isCurrentGroup) {
