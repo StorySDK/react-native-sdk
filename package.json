@@ -1,6 +1,6 @@
 {
   "name": "@storysdk/react-native-sdk",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "React Native SDK",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
