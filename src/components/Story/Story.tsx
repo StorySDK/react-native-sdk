@@ -32,7 +32,7 @@ const Story: React.FC<Props> = (props) => {
   const [foregroundWidget, setForegroundWidget] = React.useState<null | string>(
     null
   );
-
+  console.log(Dimensions.get('window').width);
   React.useEffect(() => {
     setForegroundWidget(null);
     if (isCurrentGroup) {
@@ -114,6 +114,8 @@ const styles = StyleSheet.create({
           Dimensions.get('window').height / Dimensions.get('window').width <=
           1.77777778
             ? Dimensions.get('window').height / (1920 / PixelRatio.get())
+            : Dimensions.get('window').width / (1080 / PixelRatio.get()) < 1
+            ? Dimensions.get('window').width / 1080
             : 1,
       },
     ],

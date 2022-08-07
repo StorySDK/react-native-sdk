@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Animated,
+  Dimensions,
   Image,
   PixelRatio,
   Pressable,
@@ -31,7 +32,7 @@ const StoryControls: React.FC<Props> = (props) => {
   return (
     <Animated.View style={[styles.container, hide]}>
       <Pressable style={[styles.closeBtn]} onPress={onClose}>
-        <CloseIcon />
+        <CloseIcon width={size(16)} height={size(16)} />
       </Pressable>
       <View style={[styles.group]}>
         <Image style={styles.groupImg} source={{ uri: group.imageUrl }} />
@@ -64,6 +65,11 @@ const StoryControls: React.FC<Props> = (props) => {
   );
 };
 
+const size = (value: number) =>
+  Dimensions.get('window').width / (1080 / PixelRatio.get()) < 1
+    ? value * (1080 / Dimensions.get('window').width)
+    : value;
+
 const styles = StyleSheet.create({
   container: {},
   closeBtn: {
@@ -71,18 +77,15 @@ const styles = StyleSheet.create({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    left: 1080 / PixelRatio.get() - 40,
-    top: 18,
-    height: 32,
-    width: 32,
-  },
-  item: {
-    width: '100px',
+    left: 1080 / PixelRatio.get() - size(40),
+    top: size(18),
+    height: size(32),
+    width: size(32),
   },
   group: {
     position: 'absolute',
-    left: 12,
-    top: 18,
+    left: size(12),
+    top: size(18),
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
@@ -90,39 +93,34 @@ const styles = StyleSheet.create({
   groupTitle: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 14,
-    marginRight: 8,
+    fontSize: size(14),
+    marginRight: size(8),
     textShadowColor: 'rgba(24, 24, 24, 0.46)',
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
+    textShadowRadius: size(10),
   },
   groupImg: {
-    width: 32,
-    height: 32,
-    borderRadius: 50,
-    marginRight: 12,
-  },
-  groupDate: {
-    fontSize: 14,
-    color: 'white',
-    opacity: 0.5,
+    width: size(32),
+    height: size(32),
+    borderRadius: size(50),
+    marginRight: size(12),
   },
   indicatorContainer: {
     position: 'absolute',
     display: 'flex',
     flexDirection: 'row',
-    top: 8,
-    width: 1080 / PixelRatio.get() - 24,
-    marginLeft: 12,
-    marginRight: 10,
-    height: 4,
+    top: size(8),
+    width: 1080 / PixelRatio.get() - size(24),
+    marginLeft: size(12),
+    marginRight: size(10),
+    height: size(4),
   },
   indicator: {
     position: 'relative',
     flex: 1,
-    borderRadius: 4,
-    height: 2,
-    marginRight: 2,
+    borderRadius: size(4),
+    height: size(2),
+    marginRight: size(2),
   },
 });
 

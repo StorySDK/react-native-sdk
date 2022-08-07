@@ -7,6 +7,7 @@ import type {
   WidgetPositionType,
 } from '../types';
 import Reactions from '../core/Reactions';
+import { stylesUtils } from '../utils';
 
 interface Props {
   params: QuestionWidgetParamsType;
@@ -15,7 +16,82 @@ interface Props {
   widgetId: string;
 }
 
-export const QuestionWidget: React.FC<Props> = ({ params, widgetId }) => {
+const INIT_ELEMENT_STYLES = {
+  text: {
+    fontSize: 14,
+    lineHeight: 24,
+    marginBottom: 10,
+  },
+  card: {
+    borderRadius: 10,
+    height: 50,
+  },
+  animatedWrapper: {
+    height: 50,
+  },
+  button: {
+    borderRadius: 10,
+  },
+  buttonTitle: {
+    fontSize: 24,
+  },
+  percentText: {
+    fontSize: 20,
+  },
+  textMarked: {
+    fontSize: 16,
+  },
+};
+
+const useScalableSizes = (props: Props) => {
+  const { position, positionLimits } = props;
+
+  const calculate = React.useCallback(
+    (size) => {
+      if (position && positionLimits) {
+        return stylesUtils.calculateElementSize(position, positionLimits, size);
+      }
+
+      return size;
+    },
+    [position, positionLimits]
+  );
+
+  return React.useMemo(
+    () => ({
+      text: {
+        fontSize: calculate(INIT_ELEMENT_STYLES.text.fontSize),
+        lineHeight: calculate(INIT_ELEMENT_STYLES.text.lineHeight),
+        marginBottom: calculate(INIT_ELEMENT_STYLES.text.marginBottom),
+      },
+      card: {
+        height: calculate(INIT_ELEMENT_STYLES.card.height),
+        borderRadius: calculate(INIT_ELEMENT_STYLES.card.borderRadius),
+      },
+      animatedWrapper: {
+        height: calculate(INIT_ELEMENT_STYLES.animatedWrapper.height),
+      },
+      button: {
+        borderRadius: calculate(INIT_ELEMENT_STYLES.button.borderRadius),
+      },
+      buttonTitle: {
+        fontSize: calculate(INIT_ELEMENT_STYLES.buttonTitle.fontSize),
+      },
+      textMarked: {
+        fontSize: calculate(INIT_ELEMENT_STYLES.textMarked.fontSize),
+      },
+      percentText: {
+        fontSize: calculate(INIT_ELEMENT_STYLES.percentText.fontSize),
+      },
+    }),
+    [calculate]
+  );
+};
+
+export const QuestionWidget: React.FC<Props> = (props) => {
+  const { params, widgetId } = props;
+  const elementSizes = useScalableSizes(props);
+
   const confirmAnim = React.useRef(new Animated.Value(50)).current;
   const declineAnim = React.useRef(new Animated.Value(50)).current;
   const [answer, setAnswer] = React.useState<'confirm' | 'decline' | null>(
@@ -54,10 +130,10 @@ export const QuestionWidget: React.FC<Props> = ({ params, widgetId }) => {
       return 100;
     }
     if (percent < 25) {
-      return 25;
+      return 30;
     }
     if (percent > 75) {
-      return 75;
+      return 70;
     }
 
     return percent;
@@ -65,11 +141,11 @@ export const QuestionWidget: React.FC<Props> = ({ params, widgetId }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{params.question}</Text>
-      <View style={styles.card}>
+      <Text style={[styles.title, elementSizes.text]}>{params.question}</Text>
+      <View style={[styles.card, elementSizes.card]}>
         <Animated.View
           style={[
-            styles.animatedWrapper,
+            elementSizes.animatedWrapper,
             styles.confirm,
             answer && styles.marked,
             {
@@ -80,26 +156,33 @@ export const QuestionWidget: React.FC<Props> = ({ params, widgetId }) => {
             },
           ]}
         >
-          <Pressable style={[styles.button]} onPress={handleSelect('confirm')}>
+          <Pressable
+            style={[styles.button, elementSizes.button]}
+            onPress={handleSelect('confirm')}
+          >
             <LinearTextGradient
               locations={[0, 1]}
               colors={['#37D9BC', '#44D937']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-              style={[styles.confirmText, answer && styles.textMarked]}
+              style={[
+                styles.buttonTitle,
+                elementSizes.buttonTitle,
+                answer && elementSizes.textMarked,
+              ]}
             >
               <Text>{params.confirm}</Text>
             </LinearTextGradient>
             {answer && (
-              <Text style={styles.percentText}>{percents.confirm}%</Text>
+              <Text style={[styles.percentText, elementSizes.percentText]}>
+                {percents.confirm}%
+              </Text>
             )}
           </Pressable>
         </Animated.View>
         <Animated.View
           style={[
-            styles.animatedWrapper,
-            styles.decline,
-            answer && styles.marked,
+            elementSizes.animatedWrapper,
             {
               width: declineAnim.interpolate({
                 inputRange: [0, 100],
@@ -108,18 +191,27 @@ export const QuestionWidget: React.FC<Props> = ({ params, widgetId }) => {
             },
           ]}
         >
-          <Pressable style={[styles.button]} onPress={handleSelect('decline')}>
+          <Pressable
+            style={[styles.button, elementSizes.button]}
+            onPress={handleSelect('decline')}
+          >
             <LinearTextGradient
               locations={[0, 1]}
               colors={['#CE25CA', '#EA0E4E']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-              style={[styles.declineText, answer && styles.textMarked]}
+              style={[
+                styles.buttonTitle,
+                elementSizes.buttonTitle,
+                answer && elementSizes.textMarked,
+              ]}
             >
               <Text>{params.decline}</Text>
             </LinearTextGradient>
             {answer && (
-              <Text style={styles.percentText}>{percents.decline}%</Text>
+              <Text style={[styles.percentText, elementSizes.percentText]}>
+                {percents.decline}%
+              </Text>
             )}
           </Pressable>
         </Animated.View>
@@ -133,8 +225,6 @@ const styles = StyleSheet.create({
   card: {
     display: 'flex',
     backgroundColor: 'white',
-    borderRadius: 10,
-    height: 50,
     flexDirection: 'row',
     shadowColor: '#000000',
     shadowOpacity: 0.15,
@@ -145,13 +235,7 @@ const styles = StyleSheet.create({
   title: {
     color: '#fff',
     textAlign: 'center',
-    paddingBottom: 10,
-    fontSize: 16,
     fontWeight: 'bold',
-    lineHeight: 24,
-  },
-  animatedWrapper: {
-    height: 50,
   },
   button: {
     display: 'flex',
@@ -165,24 +249,13 @@ const styles = StyleSheet.create({
   },
   percentText: {
     color: '#000',
-    fontSize: 20,
   },
   confirm: {
     borderRightWidth: 2,
     borderRightColor: '#DBDBDB',
   },
-  confirmText: {
-    fontSize: 24,
+  buttonTitle: {
     fontWeight: 'bold',
     textTransform: 'uppercase',
-  },
-  decline: {},
-  declineText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-  },
-  textMarked: {
-    fontSize: 16,
   },
 });

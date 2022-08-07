@@ -1,9 +1,20 @@
 import React from 'react';
 import Svg, { Path } from 'react-native-svg';
 
-export function CloseIcon() {
+export function CloseIcon({
+  width,
+  height,
+}: {
+  width?: number;
+  height?: number;
+}) {
   return (
-    <Svg width="16" height="16" fill="none" viewBox="0 0 35 35">
+    <Svg
+      width={width || 16}
+      height={height || 16}
+      fill="none"
+      viewBox="0 0 35 35"
+    >
       <Path
         stroke="#fff"
         strokeLinecap="round"

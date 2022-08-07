@@ -25,6 +25,7 @@ interface EmojiButtonProps {
 
   disabled?: boolean;
   style: any;
+  size: number;
 }
 
 const INIT_ELEMENT_STYLES = {
@@ -50,6 +51,7 @@ const EmojiButton: React.FC<EmojiButtonProps> = ({
   onPress,
   disabled,
   style,
+  size,
 }) => {
   const { animStyles, startAnim } = useSpiritAnim();
 
@@ -63,9 +65,9 @@ const EmojiButton: React.FC<EmojiButtonProps> = ({
   return (
     <Pressable key={name} style={[styles.item, style]} onPress={handlePress}>
       <Animated.View style={{ position: 'absolute', ...animStyles }}>
-        <Emoji size={32} emoji={unicode} />
+        <Emoji size={size} emoji={unicode} />
       </Animated.View>
-      <Emoji size={32} emoji={unicode} />
+      <Emoji size={size} emoji={unicode} />
     </Pressable>
   );
 };
@@ -134,6 +136,7 @@ export const EmojiReactionWidget: React.FC<Props> = ({
           unicode={unicode}
           onPress={handleSelectEmoji(name)}
           disabled={!!selectedEmoji}
+          size={calculate(INIT_ELEMENT_STYLES.emoji.width)}
           style={elementSizes.item}
         />
       ))}
