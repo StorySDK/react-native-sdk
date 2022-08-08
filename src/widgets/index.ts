@@ -1,14 +1,14 @@
-import { ChooseAnswerWidget } from './ChooseAnswerWidget/ChooseAnswerWidget';
-import { ClickMeWidget } from './ClickMeWidget';
-import { FigureWidget } from './FigureWidget';
-import { EmojiReactionWidget } from './EmojiReactionWidget';
-import { GiphyWidget } from './GiphyWidget';
-import { QuestionWidget } from './QuestionWidget';
-import { SliderWidget } from './SliderWidget';
-import { SwipeUpWidget } from './SwipeUpWidget';
-import { TalkAboutWidget } from './TalkAboutWidget';
-import { TextWidget } from './TextWidget';
-import { TimerWidget } from './TimerWidget';
+import { ChooseAnswerWidget } from './ interactive/ChooseAnswerWidget/ChooseAnswerWidget';
+import { ClickMeWidget } from './ interactive/ClickMeWidget';
+import { FigureWidget } from './display/FigureWidget';
+import { EmojiReactionWidget } from './ interactive/EmojiReactionWidget';
+import { GiphyWidget } from './display/GiphyWidget';
+import { QuestionWidget } from './ interactive/QuestionWidget';
+import { SliderWidget } from './ interactive/SliderWidget';
+import { SwipeUpWidget } from './ interactive/SwipeUpWidget';
+import { TalkAboutWidget } from './ interactive/TalkAboutWidget';
+import { TextWidget } from './display/TextWidget';
+import { TimerWidget } from './ interactive/TimerWidget';
 
 export {
   ChooseAnswerWidget,

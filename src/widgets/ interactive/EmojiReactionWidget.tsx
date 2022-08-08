@@ -4,11 +4,11 @@ import type {
   EmojiReactionWidgetParamsType,
   WidgetPositionLimitsType,
   WidgetPositionType,
-} from '../types';
-import Emoji from '../components/Emoji';
-import { useSpiritAnim } from '../hooks';
-import { stylesUtils } from '../utils';
-import Reactions from '../core/Reactions';
+} from '../../types';
+import Emoji from '../../components/Emoji';
+import { useSpiritAnim } from '../../hooks';
+import { stylesUtils } from '../../utils';
+import Reactions from '../../core/Reactions';
 
 interface Props {
   params: EmojiReactionWidgetParamsType;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Image, Pressable, Linking } from 'react-native';
-import type { ClickMeWidgetParamsType } from '../types';
-import Reactions from '../core/Reactions';
+import type { ClickMeWidgetParamsType } from '../../types';
+import Reactions from '../../core/Reactions';
 
 interface Props {
   params: ClickMeWidgetParamsType;

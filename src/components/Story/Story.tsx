@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
           1.77777778
             ? Dimensions.get('window').height / (1920 / PixelRatio.get())
             : Dimensions.get('window').width / (1080 / PixelRatio.get()) < 1
-            ? Dimensions.get('window').width / 1080
+            ? Dimensions.get('window').width / (1080 / PixelRatio.get())
             : 1,
       },
     ],

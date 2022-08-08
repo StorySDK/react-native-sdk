@@ -11,10 +11,10 @@ import type {
   TalkAboutWidgetParamsType,
   WidgetPositionLimitsType,
   WidgetPositionType,
-} from '../types';
-import Reactions from '../core/Reactions';
-import { stylesUtils } from '../utils';
-import StoryContext from '../core/StoryContext';
+} from '../../types';
+import Reactions from '../../core/Reactions';
+import { stylesUtils } from '../../utils';
+import StoryContext from '../../core/StoryContext';
 
 interface Props {
   params: TalkAboutWidgetParamsType;
@@ -42,7 +42,7 @@ const INIT_ELEMENT_STYLES = {
   input: {
     fontSize: 10,
     lineHeight: 16,
-    padding: 4,
+    padding: 10,
     borderRadius: 8,
   },
   empty: {
@@ -184,9 +184,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     backgroundColor: '#ffffff',
-    borderRadius: 10,
-    padding: 12,
-    paddingTop: 30,
     shadowColor: '#000000',
     shadowOpacity: 0.15,
     shadowRadius: 4,
@@ -201,9 +198,6 @@ const styles = StyleSheet.create({
     borderColor: '#ffffff',
   },
   title: {
-    fontSize: 14,
-    lineHeight: 16.8,
-    marginBottom: 15,
     fontWeight: '500',
     color: '#05051d',
     textAlign: 'center',

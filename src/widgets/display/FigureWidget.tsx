@@ -4,8 +4,8 @@ import { View, StyleSheet, Image } from 'react-native';
 import type {
   RectangleWidgetParamsType,
   EllipseWidgetParamsType,
-} from '../types';
-import { stylesUtils } from '../utils';
+} from '../../types';
+import { stylesUtils } from '../../utils';
 
 interface RectangleProps {
   params: RectangleWidgetParamsType;

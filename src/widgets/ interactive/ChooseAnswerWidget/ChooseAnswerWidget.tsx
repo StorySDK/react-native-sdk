@@ -4,11 +4,11 @@ import type {
   ChooseAnswerWidgetParamsType,
   WidgetPositionLimitsType,
   WidgetPositionType,
-} from '../../types';
+} from '../../../types';
 import { styles } from './styles';
 import { Answer } from './Answer';
-import { stylesUtils } from '../../utils';
-import Reactions from '../../core/Reactions';
+import { stylesUtils } from '../../../utils';
+import Reactions from '../../../core/Reactions';
 
 interface Props {
   params: ChooseAnswerWidgetParamsType;

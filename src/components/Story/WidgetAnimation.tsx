@@ -15,10 +15,9 @@ interface WidgetAnimationProps {
   widget: WidgetObjectType;
 }
 
-const size = (value: number) =>
-  Dimensions.get('window').width / (1080 / PixelRatio.get()) < 1
-    ? value * (1080 / Dimensions.get('window').width)
-    : value;
+const size = (value: number) => {
+  return value * (1080 / PixelRatio.get() / Dimensions.get('window').width);
+};
 
 const WidgetAnimation: React.FC<WidgetAnimationProps> = (props) => {
   const { widget, play } = props;

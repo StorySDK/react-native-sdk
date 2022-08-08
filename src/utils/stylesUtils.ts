@@ -59,14 +59,7 @@ export const stylesUtils = {
   },
 
   calculateScale(size: number) {
-    const fullHDWidth = 1080;
-    const windowWidth = Dimensions.get('window').width * PixelRatio.get();
-
-    if (windowWidth < fullHDWidth) {
-      return size * (fullHDWidth / windowWidth);
-    }
-
-    return size;
+    return size * (1080 / PixelRatio.get() / Dimensions.get('window').width);
   },
 
   calculateElementSize(

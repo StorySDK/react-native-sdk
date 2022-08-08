@@ -5,9 +5,9 @@ import type {
   QuestionWidgetParamsType,
   WidgetPositionLimitsType,
   WidgetPositionType,
-} from '../types';
-import Reactions from '../core/Reactions';
-import { stylesUtils } from '../utils';
+} from '../../types';
+import Reactions from '../../core/Reactions';
+import { stylesUtils } from '../../utils';
 
 interface Props {
   params: QuestionWidgetParamsType;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Image } from 'react-native';
-import type { GiphyWidgetParamsType } from '../types';
+import type { GiphyWidgetParamsType } from '../../types';
 
 interface Props {
   params: GiphyWidgetParamsType;

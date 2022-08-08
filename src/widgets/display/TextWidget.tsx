@@ -4,7 +4,7 @@ import type {
   TextWidgetParamsType,
   WidgetPositionLimitsType,
   WidgetPositionType,
-} from '../types';
+} from '../../types';
 
 interface Props {
   params: TextWidgetParamsType;

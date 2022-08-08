@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import type { TimerWidgetParamsType } from '../types';
+import type { TimerWidgetParamsType } from '../../types';
 
 interface Props {
   params: TimerWidgetParamsType;
