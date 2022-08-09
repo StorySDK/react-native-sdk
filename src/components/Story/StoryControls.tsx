@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   Animated,
-  Dimensions,
   Image,
   PixelRatio,
   Pressable,
@@ -13,6 +12,7 @@ import type { GroupType } from '../../types';
 import { CloseIcon } from '../../icons';
 import StoryContext from '../../core/StoryContext';
 import AnimatedIndicator from './AnimatedIndicator';
+import { stylesUtils } from '../../utils';
 
 interface Props {
   group: GroupType;
@@ -65,10 +65,7 @@ const StoryControls: React.FC<Props> = (props) => {
   );
 };
 
-const size = (value: number) =>
-  Dimensions.get('window').width / (1080 / PixelRatio.get()) < 1
-    ? value * (1080 / Dimensions.get('window').width)
-    : value;
+const size = stylesUtils.calculateScale;
 
 const styles = StyleSheet.create({
   container: {},

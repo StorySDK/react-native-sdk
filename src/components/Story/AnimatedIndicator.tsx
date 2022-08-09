@@ -1,6 +1,7 @@
 import React from 'react';
 import { Animated, StyleSheet } from 'react-native';
 import type { PlayStatusType } from '../../types';
+import { stylesUtils } from '../../utils';
 
 interface Props {
   playStatus: PlayStatusType;
@@ -62,10 +63,12 @@ function propsAreEqual(prev: Props, next: Props) {
   return prev.playStatus === next.playStatus;
 }
 
+const size = stylesUtils.calculateScale;
+
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 4,
-    height: 2,
+    borderRadius: size(4),
+    height: size(2),
     backgroundColor: 'rgba(255, 255, 255, 0.4)',
   },
 });

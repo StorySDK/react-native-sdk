@@ -32,7 +32,6 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <Stories token={token} reload={reloadTimestamp} />
       <View style={styles.field}>
         <Text style={styles.label}>Token</Text>
         <TextInput style={styles.input} onChangeText={setToken} value={token} />
@@ -42,6 +41,10 @@ export default function App() {
           title="Reload data"
           onPress={() => setReloadTimestamp(new Date().getTime())}
         />
+      </View>
+      <View style={styles.block}>
+        <Text style={styles.title}>Default groups view</Text>
+        <Stories token={token} reload={reloadTimestamp} />
       </View>
       <View style={styles.block}>
         <Text style={styles.title}>Custom groups view</Text>
