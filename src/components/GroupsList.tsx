@@ -7,6 +7,7 @@ import { GroupItemProps, LoadingStatus } from '../types';
 import StoriesList from './StoriesList';
 import Reactions from '../core/Reactions';
 import GroupItem from './GroupItem';
+import StatusBarContext from '../core/StatusBarContext';
 
 interface GroupsListProps {
   groups: GroupType[];
@@ -42,6 +43,7 @@ const GroupsList = (props: GroupsListProps) => {
   const [viewed, setViewed] = React.useState<number[]>([]);
   const [currentGroup, setCurrentGroup] = React.useState(0);
   const [modalShow, setModalShow] = React.useState(false);
+  const statusBar = React.useContext(StatusBarContext)
 
   const handleTap = (groupIndex: number) => () => {
     setCurrentGroup(groupIndex);
@@ -118,7 +120,7 @@ const GroupsList = (props: GroupsListProps) => {
       </ScrollView>
       <Modal
         isVisible={modalShow}
-        style={styles.modal}
+        style={[styles.modal, { backgroundColor: statusBar.backgroundColor }]}
         onBackButtonPress={handleCloseModal}
         backdropOpacity={1}
         statusBarTranslucent={false}

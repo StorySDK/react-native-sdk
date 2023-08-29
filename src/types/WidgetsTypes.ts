@@ -11,4 +11,9 @@ export enum WidgetsTypes {
   TIMER = 'timer',
   CHOOSE_ANSWER = 'choose_answer',
   GIPHY = 'giphy',
+  QUIZ_ONE_ANSWER = 'quiz_one_answer',
+  QUIZ_MULTIPLE_ANSWERS = 'quiz_multiple_answers',
+  QUIZ_OPEN_ANSWER = 'quiz_open_answer',
+  QUIZ_MULTIPLE_ANSWER_WITH_IMAGE = 'quiz_one_multiple_with_image',
+  QUIZ_RATE = 'quiz_rate',
 }

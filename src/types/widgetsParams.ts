@@ -1,4 +1,9 @@
-import type { BackgroundType } from './index';
+import type { BackgroundType, BorderType, FontParamsType } from './index';
+
+export type QuizAnswersScoreParams = {
+  letter: string;
+  points: number;
+};
 
 type EmojiType = {
   name: string;
@@ -98,4 +103,97 @@ export type TimerWidgetParamsType = {
   time: number;
   text: string;
   color: string;
+};
+
+export type QuizMultipleAnswerWidgetParamsType = {
+  title: string;
+  color?: string;
+  answers: Array<{
+    id: string;
+    title: string;
+    emoji: EmojiType | undefined;
+    score: QuizAnswersScoreParams;
+  }>;
+  isTitleHidden: boolean;
+  storyId?: string;
+  titleFont: {
+    fontFamily: string;
+    fontParams: FontParamsType;
+    fontColor: BorderType;
+  };
+  answersFont: {
+    fontFamily: string;
+    fontParams: FontParamsType;
+    fontColor: BorderType;
+  };
+};
+
+export type QuizMultipleAnswerWithImageWidgetParamsType = {
+  title: string;
+  color?: string;
+  answers: Array<{
+    id: string;
+    title: string;
+    score: QuizAnswersScoreParams;
+    image?: {
+      url: string;
+      fileId: string;
+    };
+  }>;
+  isTitleHidden: boolean;
+  storyId?: string;
+  titleFont: {
+    fontFamily: string;
+    fontParams: FontParamsType;
+    fontColor: BorderType;
+  };
+  answersFont: {
+    fontFamily: string;
+    fontParams: FontParamsType;
+    fontColor: BorderType;
+  };
+};
+
+export type QuizOneAnswerWidgetParamsType = {
+  title: string;
+  color?: string;
+  answers: Array<{
+    id: string;
+    title: string;
+    emoji: EmojiType | undefined;
+    score: QuizAnswersScoreParams;
+  }>;
+  isTitleHidden: boolean;
+  storyId?: string;
+  titleFont: {
+    fontFamily: string;
+    fontParams: FontParamsType;
+    fontColor: BorderType;
+  };
+  answersFont: {
+    fontFamily: string;
+    fontParams: FontParamsType;
+    fontColor: BorderType;
+  };
+};
+
+export type QuizOpenAnswerWidgetParamsType = {
+  title: string;
+  isTitleHidden: boolean;
+  storyId?: string;
+  fontFamily: string;
+  fontParams: FontParamsType;
+  fontColor: BorderType;
+};
+
+export type QuizRateWidgetParamsType = {
+  title: string;
+  isTitleHidden: boolean;
+  storeLinks: {
+    [key: string]: string;
+  };
+  storyId?: string;
+  fontFamily: string;
+  fontParams: FontParamsType;
+  fontColor: BorderType;
 };

@@ -8,6 +8,7 @@ import StoryContext from '../../core/StoryContext';
 interface Props {
   story: StoryType;
   group: GroupType;
+  stories: StoryType[];
   currentStory: number;
   isCurrentGroup: boolean;
   onClose(): void;
@@ -19,6 +20,7 @@ const Story: React.FC<Props> = (props) => {
   const {
     story,
     group,
+    stories,
     currentStory,
     isCurrentGroup,
     onClose,
@@ -95,6 +97,7 @@ const Story: React.FC<Props> = (props) => {
           <StoryControls
             currentStory={currentStory}
             group={group}
+            stories={stories}
             onClose={onClose}
             onNext={handleNext}
           />

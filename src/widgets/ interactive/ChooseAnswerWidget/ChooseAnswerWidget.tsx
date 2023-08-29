@@ -9,45 +9,46 @@ import { styles } from './styles';
 import { Answer } from './Answer';
 import { stylesUtils } from '../../../utils';
 import Reactions from '../../../core/Reactions';
+import type { ChooseAnswerWidgetElemetsType } from '../../../types';
 
 interface Props {
   params: ChooseAnswerWidgetParamsType;
   position: WidgetPositionType;
+  elementsSize: ChooseAnswerWidgetElemetsType;
   positionLimits: WidgetPositionLimitsType;
   widgetId: string;
 }
 
-const INIT_ELEMENT_STYLES = {
-  container: {
-    borderRadius: 10,
-  },
-  header: {
-    fontSize: 12,
-    paddingTop: 13,
-    paddingBottom: 13,
-  },
-  answers: {
-    padding: 12,
-  },
-  answer: {
-    padding: 8,
-    marginBottom: 6,
-  },
-  answerId: {
-    width: 18,
-    height: 18,
-    marginRight: 8,
-    fontSize: 10,
-  },
-  answerTitle: {
-    fontSize: 10,
-  },
-};
+// const INIT_ELEMENT_STYLES = {
+//   container: {
+//     borderRadius: 10,
+//   },
+//   header: {
+//     fontSize: 12,
+//     paddingTop: 13,
+//     paddingBottom: 13,
+//   },
+//   answers: {
+//     padding: 12,
+//   },
+//   answer: {
+//     padding: 8,
+//     marginBottom: 6,
+//   },
+//   answerId: {
+//     width: 18,
+//     height: 18,
+//     marginRight: 8,
+//     fontSize: 10,
+//   },
+//   answerTitle: {
+//     fontSize: 10,
+//   },
+// };
 
 export const ChooseAnswerWidget: React.FC<Props> = ({
   params,
-  position,
-  positionLimits,
+  elementsSize,
   widgetId,
 }) => {
   const { text, answers, correct } = params;
@@ -85,47 +86,44 @@ export const ChooseAnswerWidget: React.FC<Props> = ({
     }
   }, [celebrateAnimation, correct, shakeAnimation, userAnswer]);
 
-  const calculate = (size: number) => {
-    if (position && positionLimits) {
-      return stylesUtils.calculateElementSize(position, positionLimits, size);
-    }
+  // const calculate = (size: number) => {
+  //   if (position && positionLimits) {
+  //     return stylesUtils.calculateElementSize(position, positionLimits, size);
+  //   }
+  //
+  //   return size;
+  // };
 
-    return size;
+  const elementSizes = {
+    container: {
+      borderRadius: elementsSize.widget.borderRadius,
+    },
+    header: {
+      paddingTop: elementsSize.header.paddingTop,
+      paddingBottom: elementsSize.header.paddingBottom,
+    },
+    title: {
+      fontSize: elementsSize.header.fontSize,
+    },
+    answers: {
+      padding: elementsSize.answers.padding,
+    },
+    answer: {
+      padding: elementsSize.answer.padding,
+      marginBottom: elementsSize.answer.marginBottom,
+    },
+    answerId: {
+      width: elementsSize.answerId.width,
+      height: elementsSize.answerId.height,
+      marginRight: elementsSize.answerId.marginRight,
+    },
+    answerIdText: {
+      fontSize: elementsSize.answerId.fontSize,
+    },
+    answerTitle: {
+      fontSize: elementsSize.answerTitle.fontSize,
+    },
   };
-
-  const elementSizes = React.useMemo(
-    () => ({
-      container: {
-        borderRadius: calculate(INIT_ELEMENT_STYLES.container.borderRadius),
-      },
-      header: {
-        paddingTop: calculate(INIT_ELEMENT_STYLES.header.paddingTop),
-        paddingBottom: calculate(INIT_ELEMENT_STYLES.header.paddingBottom),
-      },
-      title: {
-        fontSize: calculate(INIT_ELEMENT_STYLES.header.fontSize),
-      },
-      answers: {
-        padding: calculate(INIT_ELEMENT_STYLES.answers.padding),
-      },
-      answer: {
-        padding: calculate(INIT_ELEMENT_STYLES.answer.padding),
-        marginBottom: calculate(INIT_ELEMENT_STYLES.answer.marginBottom),
-      },
-      answerId: {
-        width: calculate(INIT_ELEMENT_STYLES.answerId.width),
-        height: calculate(INIT_ELEMENT_STYLES.answerId.height),
-        marginRight: calculate(INIT_ELEMENT_STYLES.answerId.marginRight),
-      },
-      answerIdText: {
-        fontSize: calculate(INIT_ELEMENT_STYLES.answerId.fontSize),
-      },
-      answerTitle: {
-        fontSize: calculate(INIT_ELEMENT_STYLES.answerTitle.fontSize),
-      },
-    }),
-    [calculate]
-  );
 
   return (
     <Animated.View

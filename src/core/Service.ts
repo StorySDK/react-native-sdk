@@ -17,10 +17,12 @@ class Service {
 
   async fetchGroups(): Promise<GroupType[]> {
     const groupsResponse = await axios.get('/groups');
-    return groupsResponse.data.data.map(({ id, title, image_url }: any) => ({
+    console.log(groupsResponse.data.data[0].settings)
+    return groupsResponse.data.data.map(({ id, title, image_url, settings }: any) => ({
       id,
       title: title,
       imageUrl: image_url,
+      settings: settings,
       stories: [],
     }));
   }
@@ -30,6 +32,9 @@ class Service {
     return storiesResponse.data.data.map((story: any) => ({
       id: story.id,
       storyData: story.story_data.widgets,
+      layerData: story.layer_data,
+      startTime: story.story_data.start_time || null,
+      endTime: story.story_data.end_time || null,
       background: story.story_data.background,
       positionIndex: story.position,
     }));

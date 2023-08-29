@@ -46,6 +46,11 @@ const StoryContent: React.FC<StoryContentProps> = (props) => {
     WidgetsTypes.EMOJI_REACTION,
     WidgetsTypes.TIMER,
     WidgetsTypes.CHOOSE_ANSWER,
+    WidgetsTypes.QUIZ_ONE_ANSWER,
+    WidgetsTypes.QUIZ_MULTIPLE_ANSWERS,
+    WidgetsTypes.QUIZ_OPEN_ANSWER,
+    WidgetsTypes.QUIZ_MULTIPLE_ANSWER_WITH_IMAGE,
+    WidgetsTypes.QUIZ_RATE,
   ];
 
   const interactiveWidgets = story.storyData.filter((w) =>

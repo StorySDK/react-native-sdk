@@ -9,6 +9,11 @@ import { SwipeUpWidget } from './ interactive/SwipeUpWidget';
 import { TalkAboutWidget } from './ interactive/TalkAboutWidget';
 import { TextWidget } from './display/TextWidget';
 import { TimerWidget } from './ interactive/TimerWidget';
+import { QuizMultipleAnswerWidget } from './ interactive/QuizMultipleAnswerWidget';
+import { QuizMultipleAnswerWithImageWidget } from './ interactive/QuizMultipleAnswerWithImageWidget';
+import { QuizOneAnswerWidget } from './ interactive/QuizOneAnswerWidget';
+import { QuizOpenAnswerWidget } from './ interactive/QuizOpenAnswerWidget';
+import { QuizRateWidget } from './ interactive/QuizRateWidget';
 
 export {
   ChooseAnswerWidget,
@@ -22,4 +27,9 @@ export {
   TalkAboutWidget,
   TextWidget,
   TimerWidget,
+  QuizOneAnswerWidget,
+  QuizMultipleAnswerWidget,
+  QuizOpenAnswerWidget,
+  QuizMultipleAnswerWithImageWidget,
+  QuizRateWidget,
 };

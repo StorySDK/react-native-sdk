@@ -2,6 +2,7 @@ import React from 'react';
 import { Animated, StyleSheet } from 'react-native';
 import type { PlayStatusType } from '../../types';
 import { stylesUtils } from '../../utils';
+import StatusBarContext from '../../core/StatusBarContext';
 
 interface Props {
   playStatus: PlayStatusType;
@@ -10,7 +11,7 @@ interface Props {
 
 const AnimatedIndicator: React.FC<Props> = (props) => {
   const { playStatus } = props;
-
+  const { scrollAfterAnimation } = React.useContext(StatusBarContext)
   const anim = React.useRef(new Animated.Value(0)).current;
   const [value, setValue] = React.useState<number>(0);
 
@@ -34,7 +35,7 @@ const AnimatedIndicator: React.FC<Props> = (props) => {
         toValue: 100,
         duration: 7000,
       }).start((event: Animated.EndResult) => {
-        event.finished && props.onNext();
+        scrollAfterAnimation && event.finished && props.onNext();
       });
     }
   }, [anim, playStatus]);

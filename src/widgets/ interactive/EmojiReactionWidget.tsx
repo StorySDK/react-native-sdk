@@ -9,10 +9,12 @@ import Emoji from '../../components/Emoji';
 import { useSpiritAnim } from '../../hooks';
 import { stylesUtils } from '../../utils';
 import Reactions from '../../core/Reactions';
+import type { EmojiReactionWidgetElemetsType } from '../../types';
 
 interface Props {
   params: EmojiReactionWidgetParamsType;
   position: WidgetPositionType;
+  elementsSize: EmojiReactionWidgetElemetsType;
   positionLimits: WidgetPositionLimitsType;
   widgetId: string;
 }
@@ -28,22 +30,22 @@ interface EmojiButtonProps {
   size: number;
 }
 
-const INIT_ELEMENT_STYLES = {
-  widget: {
-    borderRadius: 50,
-    paddingTop: 14,
-    paddingBottom: 14,
-    paddingRight: 11,
-    paddingLeft: 11,
-  },
-  emoji: {
-    width: 34,
-  },
-  item: {
-    marginRight: 11,
-    marginLeft: 11,
-  },
-};
+// const INIT_ELEMENT_STYLES = {
+//   widget: {
+//     borderRadius: 50,
+//     paddingTop: 14,
+//     paddingBottom: 14,
+//     paddingRight: 11,
+//     paddingLeft: 11,
+//   },
+//   emoji: {
+//     width: 34,
+//   },
+//   item: {
+//     marginRight: 11,
+//     marginLeft: 11,
+//   },
+// };
 
 const EmojiButton: React.FC<EmojiButtonProps> = ({
   name,
@@ -75,8 +77,7 @@ const EmojiButton: React.FC<EmojiButtonProps> = ({
 export const EmojiReactionWidget: React.FC<Props> = ({
   params,
   widgetId,
-  position,
-  positionLimits,
+  elementsSize,
 }) => {
   const [selectedEmoji, setEmoji] = React.useState<string | null>(null);
 
@@ -86,39 +87,39 @@ export const EmojiReactionWidget: React.FC<Props> = ({
     Reactions.send('answer', emojiName);
   };
 
-  const calculate = React.useCallback(
-    (size) => {
-      if (position && positionLimits) {
-        return stylesUtils.calculateElementSizeByHeight(
-          position,
-          positionLimits,
-          size
-        );
-      }
-
-      return size;
-    },
-    [position, positionLimits]
-  );
+  // const calculate = React.useCallback(
+  //   (size) => {
+  //     if (position && positionLimits) {
+  //       return stylesUtils.calculateElementSizeByHeight(
+  //         position,
+  //         positionLimits,
+  //         size
+  //       );
+  //     }
+  //
+  //     return size;
+  //   },
+  //   [position, positionLimits]
+  // );
 
   const elementSizes = React.useMemo(
     () => ({
       widget: {
-        borderRadius: calculate(INIT_ELEMENT_STYLES.widget.borderRadius),
-        paddingTop: calculate(INIT_ELEMENT_STYLES.widget.paddingTop),
-        paddingBottom: calculate(INIT_ELEMENT_STYLES.widget.paddingBottom),
-        paddingRight: calculate(INIT_ELEMENT_STYLES.widget.paddingRight),
-        paddingLeft: calculate(INIT_ELEMENT_STYLES.widget.paddingLeft),
+        borderRadius: elementsSize.widget.borderRadius,
+        paddingTop: elementsSize.widget.paddingTop,
+        paddingBottom: elementsSize.widget.paddingBottom,
+        paddingRight: elementsSize.widget.paddingRight,
+        paddingLeft: elementsSize.widget.paddingLeft,
       },
       emoji: {
-        width: calculate(INIT_ELEMENT_STYLES.emoji.width),
+        width: elementsSize.emoji.width,
       },
       item: {
-        marginRight: calculate(INIT_ELEMENT_STYLES.item.marginRight),
-        marginLeft: calculate(INIT_ELEMENT_STYLES.item.marginLeft),
+        marginRight: elementsSize.item.marginRight,
+        marginLeft: elementsSize.item.marginLeft,
       },
     }),
-    [calculate]
+    []
   );
 
   return (
@@ -136,7 +137,7 @@ export const EmojiReactionWidget: React.FC<Props> = ({
           unicode={unicode}
           onPress={handleSelectEmoji(name)}
           disabled={!!selectedEmoji}
-          size={calculate(INIT_ELEMENT_STYLES.emoji.width)}
+          size={elementsSize.emoji.width}
           style={elementSizes.item}
         />
       ))}
@@ -146,7 +147,6 @@ export const EmojiReactionWidget: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
     height: '100%',
     display: 'flex',
     flexDirection: 'row',

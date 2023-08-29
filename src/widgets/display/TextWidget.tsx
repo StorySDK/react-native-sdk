@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, PixelRatio } from 'react-native';
+import { Image, PixelRatio, Text } from 'react-native';
 import type {
   TextWidgetParamsType,
   WidgetPositionLimitsType,
@@ -10,19 +10,25 @@ interface Props {
   params: TextWidgetParamsType;
   position: WidgetPositionType;
   positionLimits: WidgetPositionLimitsType;
-  widgetImage: string;
+  widgetImage?: string;
 }
 
 export const TextWidget: React.FC<Props> = (props) => {
-  const { widgetImage, position } = props;
+  const { widgetImage, position, params } = props;
+
+  if (!widgetImage) {
+    return (
+      <Text style={{ textAlign: params.align as any }}>{params.text}</Text>
+    );
+  }
 
   return (
     <Image
       source={{ uri: widgetImage }}
       style={[
         {
-          width: position.width / PixelRatio.get(),
-          height: position.height / PixelRatio.get(),
+          width: position.origin.width / PixelRatio.get(),
+          height: position.origin.height / PixelRatio.get(),
         },
       ]}
     />

@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import type { GroupType } from '../../types';
+import type { GroupType, StoryType } from '../../types';
 import { CloseIcon } from '../../icons';
 import StoryContext from '../../core/StoryContext';
 import AnimatedIndicator from './AnimatedIndicator';
@@ -16,13 +16,14 @@ import { stylesUtils } from '../../utils';
 
 interface Props {
   group: GroupType;
+  stories: StoryType[];
   currentStory: number;
   onClose(): void;
   onNext(): void;
 }
 
 const StoryControls: React.FC<Props> = (props) => {
-  const { group, currentStory, onClose, onNext } = props;
+  const { group, stories, currentStory, onClose, onNext } = props;
   const storyContext = React.useContext(StoryContext);
 
   const hide = {
@@ -39,7 +40,7 @@ const StoryControls: React.FC<Props> = (props) => {
         <Text style={styles.groupTitle}>{group.title}</Text>
       </View>
       <View style={[styles.indicatorContainer]}>
-        {group.stories.map((_story, index) => (
+        {stories.map((_story, index) => (
           <View
             key={_story.id}
             style={[

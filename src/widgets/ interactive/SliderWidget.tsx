@@ -10,42 +10,45 @@ import Emoji from '../../components/Emoji';
 import { useSpiritAnim } from '../../hooks';
 import { stylesUtils } from '../../utils';
 import Reactions from '../../core/Reactions';
+import type { SliderWidgetElementsType } from '../../types';
 
 interface Props {
   params: SliderWidgetParamsType;
   position: WidgetPositionType;
+  elementsSize: SliderWidgetElementsType;
   positionLimits: WidgetPositionLimitsType;
   widgetId: string;
 }
 
-const INIT_ELEMENT_STYLES = {
-  container: {
-    borderRadius: 10,
-    padding: 20,
-  },
-  emoji: {
-    width: 30,
-    height: 30,
-  },
-  text: {
-    fontSize: 16,
-    marginBottom: 15,
-  },
-  track: {
-    height: 11,
-    borderRadius: 6,
-  },
-  thumb: {
-    width: 30,
-    height: 30,
-    borderRadius: 6,
-  },
-};
+// const INIT_ELEMENT_STYLES = {
+//   container: {
+//     borderRadius: 10,
+//     padding: 20,
+//   },
+//   emoji: {
+//     width: 30,
+//     height: 30,
+//   },
+//   text: {
+//     fontSize: 16,
+//     marginBottom: 15,
+//   },
+//   track: {
+//     height: 11,
+//     borderRadius: 6,
+//   },
+//   thumb: {
+//     width: 30,
+//     height: 30,
+//     borderRadius: 6,
+//   },
+// };
 
 export const SliderWidget: React.FC<Props> = ({
   params,
   position,
   positionLimits,
+  elementsSize,
   widgetId,
 }) => {
   const [value, setValue] = useState(params.value || 0);
@@ -63,23 +66,26 @@ export const SliderWidget: React.FC<Props> = ({
   const elementSizes = React.useMemo(
     () => ({
       container: {
-        borderRadius: calculate(INIT_ELEMENT_STYLES.container.borderRadius),
-        padding: calculate(INIT_ELEMENT_STYLES.container.padding),
+        borderRadius: elementsSize.widget.borderRadius,
+        paddingTop: elementsSize.widget.paddingTop,
+        paddingRight: elementsSize.widget.paddingRight,
+        paddingBottom: elementsSize.widget.paddingBottom,
+        paddingLeft: elementsSize.widget.paddingLeft,
       },
       emoji: {
-        width: calculate(INIT_ELEMENT_STYLES.emoji.width),
+        width: elementsSize.emoji.width,
       },
       text: {
-        fontSize: calculate(INIT_ELEMENT_STYLES.text.fontSize),
-        marginBottom: calculate(INIT_ELEMENT_STYLES.text.marginBottom),
+        fontSize: elementsSize.text.fontSize,
+        marginBottom: elementsSize.text.marginBottom,
       },
       track: {
-        height: calculate(INIT_ELEMENT_STYLES.track.height),
-        borderRadius: calculate(INIT_ELEMENT_STYLES.track.borderRadius),
+        height: elementsSize.slider.height,
+        borderRadius: elementsSize.slider.borderRadius,
       },
       thumb: {
-        height: calculate(INIT_ELEMENT_STYLES.thumb.height),
-        width: calculate(INIT_ELEMENT_STYLES.thumb.width),
+        height: elementsSize.emoji.height,
+        width: elementsSize.emoji.width,
       },
     }),
     [calculate]

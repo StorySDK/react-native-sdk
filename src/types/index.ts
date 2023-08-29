@@ -2,6 +2,7 @@ export * from './widgetsParams';
 export * from './WidgetType';
 export * from './GroupType';
 export * from './WidgetsTypes';
+export * from './widgetElementsTypes';
 
 export enum LoadingStatus {
   IDLE = 'idle',

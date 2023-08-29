@@ -283,7 +283,7 @@ class CubeNavigationHorizontal extends React.Component<Props, State> {
       >
         <Animated.View
           style={[
-            { backgroundColor: '#000', position: 'absolute', width, height },
+            { backgroundColor: 'transparent', position: 'absolute', width, height },
             expandStyle,
           ]}
         >

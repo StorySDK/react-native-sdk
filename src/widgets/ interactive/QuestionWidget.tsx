@@ -7,11 +7,12 @@ import type {
   WidgetPositionType,
 } from '../../types';
 import Reactions from '../../core/Reactions';
-import { stylesUtils } from '../../utils';
+import type { QuestionWidgetElementsType } from '../../types';
 
 interface Props {
   params: QuestionWidgetParamsType;
   position: WidgetPositionType;
+  elementsSize: QuestionWidgetElementsType;
   positionLimits: WidgetPositionLimitsType;
   widgetId: string;
 }
@@ -44,13 +45,13 @@ const INIT_ELEMENT_STYLES = {
 };
 
 const useScalableSizes = (props: Props) => {
-  const { position, positionLimits } = props;
+  const { elementsSize, position, positionLimits } = props;
 
   const calculate = React.useCallback(
     (size) => {
-      if (position && positionLimits) {
-        return stylesUtils.calculateElementSize(position, positionLimits, size);
-      }
+      // if (position && positionLimits) {
+      //   return stylesUtils.calculateElementSize(position, positionLimits, size);
+      // }
 
       return size;
     },
@@ -60,28 +61,29 @@ const useScalableSizes = (props: Props) => {
   return React.useMemo(
     () => ({
       text: {
-        fontSize: calculate(INIT_ELEMENT_STYLES.text.fontSize),
-        lineHeight: calculate(INIT_ELEMENT_STYLES.text.lineHeight),
-        marginBottom: calculate(INIT_ELEMENT_STYLES.text.marginBottom),
+        fontSize: elementsSize.text.fontSize,
+        lineHeight: INIT_ELEMENT_STYLES.text.lineHeight,
+        marginBottom: elementsSize.text.marginBottom,
       },
       card: {
-        height: calculate(INIT_ELEMENT_STYLES.card.height),
-        borderRadius: calculate(INIT_ELEMENT_STYLES.card.borderRadius),
+        height: INIT_ELEMENT_STYLES.card.height,
+        borderRadius: INIT_ELEMENT_STYLES.card.borderRadius,
       },
       animatedWrapper: {
-        height: calculate(INIT_ELEMENT_STYLES.animatedWrapper.height),
+        height: INIT_ELEMENT_STYLES.animatedWrapper.height,
       },
       button: {
-        borderRadius: calculate(INIT_ELEMENT_STYLES.button.borderRadius),
+        height: elementsSize.button.height,
+        borderRadius: elementsSize.button.borderRadius,
       },
       buttonTitle: {
-        fontSize: calculate(INIT_ELEMENT_STYLES.buttonTitle.fontSize),
+        fontSize: elementsSize.button.fontSize,
       },
       textMarked: {
-        fontSize: calculate(INIT_ELEMENT_STYLES.textMarked.fontSize),
+        fontSize: INIT_ELEMENT_STYLES.textMarked.fontSize,
       },
       percentText: {
-        fontSize: calculate(INIT_ELEMENT_STYLES.percentText.fontSize),
+        fontSize: INIT_ELEMENT_STYLES.percentText.fontSize,
       },
     }),
     [calculate]
