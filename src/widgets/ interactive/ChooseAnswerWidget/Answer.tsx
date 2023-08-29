@@ -8,8 +8,8 @@ import {
   TextStyle,
   ImageStyle,
 } from 'react-native';
-import { ConfirmIcon } from '../../icons/ConfirmIcon';
-import { DeclineIcon } from '../../icons/DeclineIcon';
+import { ConfirmIcon } from '../../../icons/ConfirmIcon';
+import { DeclineIcon } from '../../../icons/DeclineIcon';
 
 interface AnswerProps {
   id: string;

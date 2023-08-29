@@ -1,25 +1,29 @@
 import React from 'react';
 import { Image, Pressable, Linking } from 'react-native';
-import type { SwipeUpWidgetParamsType } from '../types';
+import type { SwipeUpWidgetParamsType } from '../../types';
+import Reactions from '../../core/Reactions';
 
 interface Props {
   params: SwipeUpWidgetParamsType;
   widgetImage: string;
-
-  onSwipe?(): void;
+  widgetId: string;
 }
 
 export const SwipeUpWidget: React.FC<Props> = ({
   params,
   widgetImage,
-  onSwipe,
+  widgetId,
 }) => {
   const handlePress = async () => {
-    onSwipe && onSwipe();
-    const supported = await Linking.canOpenURL(params.url);
+    Reactions.registerWidget(widgetId);
+    Reactions.send('click');
 
-    if (supported) {
-      await Linking.openURL(params.url);
+    if (params.url) {
+      Linking.canOpenURL(params.url).then((can) => {
+        if (can) {
+          Linking.openURL(params.url);
+        }
+      });
     }
   };
 

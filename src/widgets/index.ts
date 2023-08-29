@@ -1,27 +1,35 @@
-import { ChooseAnswerWidget } from './ChooseAnswerWidget/ChooseAnswerWidget';
-import { ClickMeWidget } from './ClickMeWidget';
-import { EllipseWidget } from './EllipseWidget';
-import { EmojiReactionWidget } from './EmojiReactionWidget';
-import { GiphyWidget } from './GiphyWidget';
-import { QuestionWidget } from './QuestionWidget';
-import { RectangleWidget } from './RectangleWidget';
-import { SliderWidget } from './SliderWidget';
-import { SwipeUpWidget } from './SwipeUpWidget';
-import { TalkAboutWidget } from './TalkAboutWidget';
-import { TextWidget } from './TextWidget';
-import { TimerWidget } from './TimerWidget';
+import { ChooseAnswerWidget } from './ interactive/ChooseAnswerWidget/ChooseAnswerWidget';
+import { ClickMeWidget } from './ interactive/ClickMeWidget';
+import { FigureWidget } from './display/FigureWidget';
+import { EmojiReactionWidget } from './ interactive/EmojiReactionWidget';
+import { GiphyWidget } from './display/GiphyWidget';
+import { QuestionWidget } from './ interactive/QuestionWidget';
+import { SliderWidget } from './ interactive/SliderWidget';
+import { SwipeUpWidget } from './ interactive/SwipeUpWidget';
+import { TalkAboutWidget } from './ interactive/TalkAboutWidget';
+import { TextWidget } from './display/TextWidget';
+import { TimerWidget } from './ interactive/TimerWidget';
+import { QuizMultipleAnswerWidget } from './ interactive/QuizMultipleAnswerWidget';
+import { QuizMultipleAnswerWithImageWidget } from './ interactive/QuizMultipleAnswerWithImageWidget';
+import { QuizOneAnswerWidget } from './ interactive/QuizOneAnswerWidget';
+import { QuizOpenAnswerWidget } from './ interactive/QuizOpenAnswerWidget';
+import { QuizRateWidget } from './ interactive/QuizRateWidget';
 
 export {
   ChooseAnswerWidget,
   ClickMeWidget,
-  EllipseWidget,
+  FigureWidget,
   EmojiReactionWidget,
   GiphyWidget,
   QuestionWidget,
-  RectangleWidget,
   SliderWidget,
   SwipeUpWidget,
   TalkAboutWidget,
   TextWidget,
   TimerWidget,
+  QuizOneAnswerWidget,
+  QuizMultipleAnswerWidget,
+  QuizOpenAnswerWidget,
+  QuizMultipleAnswerWithImageWidget,
+  QuizRateWidget,
 };

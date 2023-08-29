@@ -1,14 +1,13 @@
 import * as React from 'react';
 import { StyleSheet, Image, Text, View } from 'react-native';
+import type { GroupItemProps } from '../types';
 
-interface Props {
-  imageUrl: string;
-  title: string;
-  style: 'circle' | 'square' | 'bigSquare' | 'rectangle';
-  active?: boolean;
-}
-
-const GroupItem: React.FC<Props> = ({ imageUrl, title, style, active }) => {
+const GroupItem: React.FC<GroupItemProps> = ({
+  imageUrl,
+  title,
+  style,
+  active,
+}) => {
   return (
     <View style={[styles.container, themed.container[style]]}>
       <View
@@ -88,11 +87,13 @@ const themed = {
       position: 'absolute',
       bottom: 10,
       left: 10,
+      width: 68,
     },
     rectangle: {
       position: 'absolute',
       bottom: 10,
       left: 10,
+      width: 50,
     },
   },
   title: {
@@ -115,8 +116,9 @@ const styles = StyleSheet.create({
   },
   textWrapper: {},
   title: {
+    flexShrink: 1,
     fontFamily: 'Inter-Bold',
-    fontWeight: '600',
+    fontWeight: 'bold',
     fontSize: 10,
     color: '#2b1e2a',
     marginTop: 6,

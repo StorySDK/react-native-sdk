@@ -1,8 +1,9 @@
 import type {
   WidgetPositionType,
   BackgroundType,
-  WidgetPositionLimitsType, ThemeColorType,
+  WidgetPositionLimitsType,
 } from '../types';
+import { Dimensions, PixelRatio } from 'react-native';
 
 export const stylesUtils = {
   hexToRgba(hex: string, alpha?: number) {
@@ -57,14 +58,20 @@ export const stylesUtils = {
     };
   },
 
+  calculateScale(size: number) {
+    return size * (1080 / PixelRatio.get() / Dimensions.get('window').width);
+  },
+
   calculateElementSize(
     position: WidgetPositionType,
     positionLimits: WidgetPositionLimitsType,
     elementSize: number
   ) {
-    return positionLimits.minWidth
-      ? Math.round((elementSize * +position.width) / positionLimits?.minWidth)
-      : elementSize;
+    return stylesUtils.calculateScale(
+      positionLimits.minWidth
+        ? Math.round((elementSize * +position.width) / positionLimits?.minWidth)
+        : elementSize
+    );
   },
 
   calculateElementSizeByHeight(
@@ -72,12 +79,16 @@ export const stylesUtils = {
     positionLimits: WidgetPositionLimitsType,
     elementSize: number
   ) {
-    return positionLimits.minHeight
-      ? Math.round((elementSize * position.height) / positionLimits?.minHeight)
-      : elementSize;
+    return stylesUtils.calculateScale(
+      positionLimits.minHeight
+        ? Math.round(
+            (elementSize * position.height) / positionLimits?.minHeight
+          )
+        : elementSize
+    );
   },
 
-  getThemeColor(color: ThemeColorType) {
+  getThemeColor(color: string) {
     switch (color) {
       case 'purple':
         return '#ae13ab';
@@ -105,7 +116,7 @@ export const stylesUtils = {
         return '#ffffff';
     }
   },
-  getThemeContrastColor(color: ThemeColorType) {
+  getThemeContrastColor(color: string) {
     switch (color) {
       case 'purple':
         return '#ffffff';
@@ -124,7 +135,7 @@ export const stylesUtils = {
       case 'yellow':
         return '#05051d';
       case 'black':
-        return '#05051d';
+        return '#ffffff';
       case 'red':
         return '#ffffff';
       case 'grey':
@@ -133,4 +144,40 @@ export const stylesUtils = {
         return '#05051d';
     }
   },
+  getThemeOpacityColor(color: string) {
+    switch (color) {
+      case 'purple':
+        return '#ffffff26';
+      case 'blue':
+        return '#ffffff26';
+      case 'darkBlue':
+        return '#ffffff26';
+      case 'white':
+        return '#ebebeb';
+      case 'green':
+        return '#ffffff26';
+      case 'orange':
+        return '#ffffff26';
+      case 'orangeRed':
+        return '#ffffff26';
+      case 'yellow':
+        return '#ffffff26';
+      case 'black':
+        return '#ffffff26';
+      case 'red':
+        return '#ffffff26';
+      case 'grey':
+        return '#ffffff26';
+      default:
+        return '#ffffff26';
+    }
+  },
+  blendColors(colorA: any, colorB: any, amount: number) {
+    const [rA, gA, bA] = colorA.map((c: any) => parseInt(c, 16));
+    const [rB, gB, bB] = colorB.map((c: any) => parseInt(c, 16));
+    const r = Math.round(rA + (rB - rA) * amount).toString(16).padStart(2, '0');
+    const g = Math.round(gA + (gB - gA) * amount).toString(16).padStart(2, '0');
+    const b = Math.round(bA + (bB - bA) * amount).toString(16).padStart(2, '0');
+    return '#' + r + g + b;
+  }
 };

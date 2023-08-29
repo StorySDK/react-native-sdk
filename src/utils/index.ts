@@ -1,5 +1,4 @@
 export * from './stylesUtils';
-export * from './groupsAdapter';
 
 export const calculateTime = (time: number) => {
   const days = Math.floor(time / (1000 * 60 * 60 * 24));
