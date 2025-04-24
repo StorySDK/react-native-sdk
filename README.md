@@ -1,5 +1,7 @@
 # StorySDK React Native
 
+⚠️ **Important Notice**: This is not a full-fledged React Native SDK, but rather an adapter that uses WebView to display stories. It relies on the `@storysdk/core` package for core functionality. This implementation may have some limitations compared to native implementations.
+
 React Native components for StorySDK using WebView to display stories.
 
 ## Installation
