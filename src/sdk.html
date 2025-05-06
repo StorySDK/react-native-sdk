@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: gap: https://ssl.gstatic.com; script-src * 'self' 'unsafe-inline' 'unsafe-eval'; style-src * 'self' 'unsafe-inline'; media-src * blob: 'self' 'unsafe-inline'; img-src * 'self' data: blob:;">
   <title>StorySDK</title>
-  <script src="https://unpkg.com/react@17/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@storysdk/core@latest/dist/bundle.css" />
   
   <style>
@@ -187,7 +187,9 @@
         debug('Message received:', message);
         
         if (message.type === 'init') {
-          const options = JSON.parse(message.options);
+          const options = typeof message.options === 'string' 
+            ? JSON.parse(message.options) 
+            : message.options;
         
           initSDK(options);
         }

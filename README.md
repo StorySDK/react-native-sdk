@@ -276,6 +276,8 @@ Add the following to your Android project's `AndroidManifest.xml`:
 ```xml
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 <uses-permission android:name="android.permission.WAKE_LOCK" />
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 ```
 
 These permissions are necessary to ensure continuous media playback even when the app is minimized or the screen is locked.

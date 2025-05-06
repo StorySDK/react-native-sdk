@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { WebView } from 'react-native-webview';
-import { StyleSheet, View, Modal } from 'react-native';
+import { StyleSheet, View, Modal, Platform } from 'react-native';
 import sdkHtml from './sdk.html';
 import { StorageHandler } from './StorageHandler';
 
@@ -75,17 +75,40 @@ export const StoryModal: React.FC<StoryModalProps> = ({
         backgroundColor,
         isDebugMode,
         devMode,
-        isInReactNativeWebView: true
+        isInReactNativeWebView: true,
+        platform: Platform.OS
       };
 
       const message = {
         type: 'init',
-        options: JSON.stringify(options),
+        options: options,
       };
 
-      webViewRef.current.postMessage(JSON.stringify(message));
+      if (Platform.OS === 'android') {
+        setTimeout(() => {
+          const jsCode = `
+            (function() {
+              try {
+                const message = {
+                  type: '${message.type}',
+                  options: ${JSON.stringify(options)}
+                };
+                window.dispatchEvent(new MessageEvent('message', {
+                  data: JSON.stringify(message)
+                }));
+                true;
+              } catch(e) {
+                true;
+              }
+            })();
+          `;
+          webViewRef.current?.injectJavaScript(jsCode);
+        }, 500);
+      } else {
+        webViewRef.current.postMessage(JSON.stringify(message));
+      }
     }
-  }, [token, groupId, storyWidth, storyHeight, isShowMockup, isShowLabel, isStatusBarActive, arrowsColor, backgroundColor, isDebugMode, devMode, isReady]);
+  }, [token, groupId, storyWidth, storyHeight, isShowMockup, isShowLabel, isStatusBarActive, arrowsColor, backgroundColor, isDebugMode, devMode, isReady, autoplay]);
 
   const handleMessage = (event: any) => {
     try {
@@ -135,7 +158,7 @@ export const StoryModal: React.FC<StoryModalProps> = ({
     setIsLoading(false);
 
     if (onError) {
-      onError({ message: 'WebView error', details: nativeEvent.description });
+      onError({ message: 'WebView error', details: nativeEvent.description || JSON.stringify(nativeEvent) });
     }
   };
 
@@ -158,16 +181,45 @@ export const StoryModal: React.FC<StoryModalProps> = ({
             source={{ html: sdkHtml }}
             onMessage={handleMessage}
             onError={handleWebViewError}
+            onHttpError={(syntheticEvent) => {
+              const { nativeEvent } = syntheticEvent;
+
+              if (onError) {
+                onError({ message: 'WebView HTTP error', details: JSON.stringify(nativeEvent) });
+              }
+            }}
+            onRenderProcessGone={() => {
+              webViewRef.current?.reload();
+            }}
+            onLoadProgress={({ nativeEvent }) => {
+              if (Platform.OS === 'android' && nativeEvent.progress > 0.5) {
+                setIsLoading(false);
+              }
+            }}
+            onLoad={() => {
+              setIsLoading(false);
+            }}
+            onLoadEnd={() => {
+              setIsLoading(false);
+            }}
             style={[styles.webview, isLoading && styles.hiddenWebView]}
             javaScriptEnabled={true}
             domStorageEnabled={true}
             allowsInlineMediaPlayback={true}
             mediaPlaybackRequiresUserAction={false}
             originWhitelist={['*']}
-            mixedContentMode="always"
+            mixedContentMode="compatibility"
+            androidLayerType={Platform.OS === 'android' ? 'hardware' : undefined}
+            cacheEnabled={true}
             onContentProcessDidTerminate={() => {
               webViewRef.current?.reload();
             }}
+            nestedScrollEnabled={true}
+            overScrollMode="never"
+            thirdPartyCookiesEnabled={true}
+            javaScriptCanOpenWindowsAutomatically={true}
+            setSupportMultipleWindows={false}
+            allowFileAccess={true}
           />
         </View>
       </View>
