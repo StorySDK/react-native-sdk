@@ -8,8 +8,6 @@ interface StoryModalProps {
   token: string;
   groupId?: string;
   onClose?: () => void;
-  storyWidth?: number;
-  storyHeight?: number;
   isShowMockup?: boolean;
   isShowLabel?: boolean;
   isStatusBarActive?: boolean;
@@ -36,8 +34,6 @@ export const StoryModal: React.FC<StoryModalProps> = ({
   token,
   groupId,
   onClose,
-  storyWidth,
-  storyHeight,
   isShowMockup,
   isShowLabel,
   isStatusBarActive,
@@ -65,8 +61,6 @@ export const StoryModal: React.FC<StoryModalProps> = ({
       const options = {
         token,
         groupId,
-        storyWidth,
-        storyHeight,
         isShowMockup,
         isShowLabel,
         isStatusBarActive,
@@ -108,7 +102,7 @@ export const StoryModal: React.FC<StoryModalProps> = ({
         webViewRef.current.postMessage(JSON.stringify(message));
       }
     }
-  }, [token, groupId, storyWidth, storyHeight, isShowMockup, isShowLabel, isStatusBarActive, arrowsColor, backgroundColor, isDebugMode, devMode, isReady, autoplay]);
+  }, [token, groupId, isShowMockup, isShowLabel, isStatusBarActive, arrowsColor, backgroundColor, isDebugMode, devMode, isReady, autoplay]);
 
   const handleMessage = (event: any) => {
     try {

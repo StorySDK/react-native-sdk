@@ -194,6 +194,7 @@ const styles = StyleSheet.create({
   },
   webview: {
     flex: 1,
+    overflowY: 'hidden',
     ...Platform.select({
       android: {
         backgroundColor: 'transparent',

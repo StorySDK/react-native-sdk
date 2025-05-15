@@ -44,8 +44,6 @@ import { StoryModal } from '@storysdk/react-native';
   token="YOUR_TOKEN"
   groupId={selectedGroupId}
   onClose={() => setSelectedGroupId(null)}
-  storyWidth={300}
-  storyHeight={600}
 />
 ```
 
@@ -89,8 +87,6 @@ import { StoryModal } from '@storysdk/react-native';
 - `token` (required) - Token for accessing StorySDK
 - `groupId` - Group ID to display (or Onboarding ID for onboarding flows)
 - `onClose` - Handler for modal close event
-- `storyWidth` - Width of story in pixels
-- `storyHeight` - Height of story in pixels
 - `isShowMockup` - Whether to show device mockup around stories
 - `isShowLabel` - Whether to show labels
 - `isStatusBarActive` - Whether status bar is active
