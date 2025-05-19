@@ -47,22 +47,20 @@ import { StoryModal } from '@storysdk/react-native';
 />
 ```
 
-## Onboarding Implementation
+### StoryOnboarding
 
-For onboarding flows, use the `StoryModal` component with an Onboarding ID instead of a regular groupId:
+Component specifically designed for onboarding flows:
 
 ```jsx
-import { StoryModal } from '@storysdk/react-native';
+import { StoryOnboarding } from '@storysdk/react-native';
 
-// For onboarding implementation
-<StoryModal
+// In your component
+<StoryOnboarding
   token="YOUR_TOKEN"
-  groupId="ONBOARDING_ID" // Use your Onboarding ID here
+  onboardingId="YOUR_ONBOARDING_ID"
   onClose={() => setOnboardingComplete(true)}
 />
 ```
-
-**Important**: When an Onboarding ID is specified, the modal window will open automatically. Only use the `StoryModal` component for onboarding implementations.
 
 ## Props
 
@@ -85,7 +83,7 @@ import { StoryModal } from '@storysdk/react-native';
 ### StoryModal
 
 - `token` (required) - Token for accessing StorySDK
-- `groupId` - Group ID to display (or Onboarding ID for onboarding flows)
+- `groupId` - Group ID to display
 - `onClose` - Handler for modal close event
 - `isShowMockup` - Whether to show device mockup around stories
 - `isShowLabel` - Whether to show labels
@@ -93,13 +91,30 @@ import { StoryModal } from '@storysdk/react-native';
 - `autoplay` - Automatically play through stories
 - `arrowsColor` - Color of navigation arrows
 - `backgroundColor` - Background color of the component
-- `forbidClose` - Prevent modal from being closed (useful for critical onboarding flows)
+- `forbidClose` - Prevent modal from being closed
 - `onError` - Error handler callback that receives error details
 - `onEvent` - Event handler callback that receives event type and associated data
 
+### StoryOnboarding
+
+- `token` (required) - Token for accessing StorySDK
+- `onboardingId` (required) - ID of the onboarding flow
+- `isShowMockup` - Whether to show device mockup around stories
+- `isStatusBarActive` - Whether status bar is active
+- `arrowsColor` - Color of navigation arrows
+- `backgroundColor` - Background color of the component
+- `isDebugMode` - Enable debug mode
+- `devMode` - Development mode ('staging' | 'development')
+- `forbidClose` - Prevent modal from being closed (useful for critical onboarding flows)
+- `onClose` - Handler for onboarding completion
+- `onError` - Error handler callback that receives error details
+- `onEvent` - Event handler callback that receives event type and associated data
+- `isOpen` - Control the visibility of the onboarding modal externally
+- `setIsOpen` - Function to control the visibility of the onboarding modal externally
+
 ## SDK Events
 
-`StoryGroups` and `StoryModal` components can handle the following events through the `onEvent` prop:
+All components can handle the following events through the `onEvent` prop:
 
 - `groupClose` - Group of stories closed
 - `groupOpen` - Group of stories opened
@@ -118,10 +133,11 @@ import { StoryModal } from '@storysdk/react-native';
 ```jsx
 import React, { useState } from 'react';
 import { View } from 'react-native';
-import { StoryGroups, StoryModal } from '@storysdk/react-native';
+import { StoryGroups, StoryModal, StoryOnboarding } from '@storysdk/react-native';
 
 const App = () => {
   const [selectedGroupId, setSelectedGroupId] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(true);
 
   const handleEvent = (eventType, eventData) => {
     console.log(`Event: ${eventType}`, eventData);
@@ -145,6 +161,13 @@ const App = () => {
         onClose={() => setSelectedGroupId(null)}
         onEvent={handleEvent}
       />
+      <StoryOnboarding
+        token="YOUR_TOKEN"
+        onboardingId="YOUR_ONBOARDING_ID"
+        isOpen={showOnboarding}
+        setIsOpen={setShowOnboarding}
+        onEvent={handleEvent}
+      />
     </View>
   );
 };
@@ -152,7 +175,7 @@ const App = () => {
 export default App;
 ```
 
-## Usage Example
+## Usage Examples
 
 ### Standard Story Implementation
 
@@ -187,7 +210,7 @@ export default App;
 ```jsx
 import React, { useState, useEffect } from 'react';
 import { View } from 'react-native';
-import { StoryModal } from '@storysdk/react-native';
+import { StoryOnboarding } from '@storysdk/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const App = () => {
@@ -222,10 +245,12 @@ const App = () => {
     <View style={{ flex: 1 }}>
       {/* Your app content */}
       
-      {/* Onboarding modal */}
-      <StoryModal
+      {/* Onboarding component */}
+      <StoryOnboarding
         token="YOUR_TOKEN"
-        groupId={showOnboarding ? "ONBOARDING_ID" : null}
+        onboardingId="YOUR_ONBOARDING_ID"
+        isOpen={showOnboarding}
+        setIsOpen={setShowOnboarding}
         onClose={handleOnboardingComplete}
         forbidClose={false} // Set to true if onboarding must be completed
       />
@@ -251,29 +276,10 @@ Add the following to your iOS project's `Info.plist` file:
 </array>
 ```
 
-If you encounter the error `ProcessAssertion::acquireSync Failed to acquire RBS assertion 'WebKit Media Playback'`, you may need to add additional entitlements to your project:
-
-1. Create or edit the `.entitlements` file in your iOS project root
-2. Add the following entitlements:
-
-```xml
-<key>com.apple.runningboard.assertions.webkit</key>
-<true/>
-<key>com.apple.multitasking.systemappassertions</key>
-<true/>
-```
-
-3. In Xcode, go to project settings > Signing & Capabilities and add the "Background Modes" capability, then enable the "Audio, AirPlay, and Picture in Picture" option
-
 ### Android
 
-Add the following to your Android project's `AndroidManifest.xml`:
+Add the following to your Android project's `AndroidManifest.xml` file:
 
 ```xml
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 <uses-permission android:name="android.permission.WAKE_LOCK" />
-<uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 ```
-
-These permissions are necessary to ensure continuous media playback even when the app is minimized or the screen is locked.

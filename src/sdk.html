@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: gap: https://ssl.gstatic.com; script-src * 'self' 'unsafe-inline' 'unsafe-eval'; style-src * 'self' 'unsafe-inline'; media-src * blob: 'self' 'unsafe-inline'; img-src * 'self' data: blob:;">
   <title>StorySDK</title>
-  <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@storysdk/core@1.8.7/dist/bundle.css" />
+  <script src="https://unpkg.com/react@17/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js" crossorigin></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@storysdk/core@1.8.8/dist/bundle.css" />
   
   <style>
     html, body {
@@ -73,7 +73,7 @@
           return;
         }
 
-        let scriptUrl = 'https://cdn.jsdelivr.net/npm/@storysdk/core@1.8.7/dist/bundle.umd.js';
+        let scriptUrl = 'https://cdn.jsdelivr.net/npm/@storysdk/core@1.8.8/dist/bundle.umd.js';
         
         if (mode === 'development') {
           scriptUrl = 'http://localhost:3003/bundle.umd.js';

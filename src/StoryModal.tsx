@@ -3,25 +3,19 @@ import { WebView } from 'react-native-webview';
 import { StyleSheet, View, Modal, Platform } from 'react-native';
 import sdkHtml from './sdk.html';
 import { StorageHandler } from './StorageHandler';
-
 interface StoryModalProps {
   token: string;
   groupId?: string;
-  onClose?: () => void;
   isShowMockup?: boolean;
-  isShowLabel?: boolean;
   isStatusBarActive?: boolean;
   arrowsColor?: string;
   backgroundColor?: string;
   isDebugMode?: boolean;
   devMode?: 'staging' | 'development';
-  groupImageWidth?: number;
-  groupImageHeight?: number;
-  groupTitleSize?: number;
-  groupClassName?: string;
-  groupsClassName?: string;
   forbidClose?: boolean;
   autoplay?: boolean;
+  isOnboarding?: boolean;
+  onClose?: () => void;
   onError?: (error: { message: string, details?: string }) => void;
   onEvent?: (event: string, data: any) => void;
 }
@@ -35,13 +29,13 @@ export const StoryModal: React.FC<StoryModalProps> = ({
   groupId,
   onClose,
   isShowMockup,
-  isShowLabel,
   isStatusBarActive,
   arrowsColor,
   backgroundColor,
   isDebugMode,
   devMode,
   autoplay = true,
+  isOnboarding,
   onError,
   onEvent,
 }) => {
@@ -62,7 +56,6 @@ export const StoryModal: React.FC<StoryModalProps> = ({
         token,
         groupId,
         isShowMockup,
-        isShowLabel,
         isStatusBarActive,
         autoplay,
         arrowsColor,
@@ -70,7 +63,8 @@ export const StoryModal: React.FC<StoryModalProps> = ({
         isDebugMode,
         devMode,
         isInReactNativeWebView: true,
-        platform: Platform.OS
+        platform: Platform.OS,
+        isOnboarding,
       };
 
       const message = {
@@ -102,7 +96,7 @@ export const StoryModal: React.FC<StoryModalProps> = ({
         webViewRef.current.postMessage(JSON.stringify(message));
       }
     }
-  }, [token, groupId, isShowMockup, isShowLabel, isStatusBarActive, arrowsColor, backgroundColor, isDebugMode, devMode, isReady, autoplay]);
+  }, [token, groupId, isShowMockup, isStatusBarActive, arrowsColor, backgroundColor, isDebugMode, devMode, isReady, autoplay]);
 
   const handleMessage = (event: any) => {
     try {
@@ -130,7 +124,7 @@ export const StoryModal: React.FC<StoryModalProps> = ({
 
       if (data.type === 'webview:ready') {
         setIsReady(true);
-      } else if (data.type === 'storyModalClose' && onClose) {
+      } else if ((data.type === 'storyModalClose' || data.data?.actionType === 'close') && onClose) {
         onClose();
       } else if (data.type === 'error') {
         setIsLoading(false);
