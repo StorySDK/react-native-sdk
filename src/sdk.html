@@ -5,9 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: gap: https://ssl.gstatic.com; script-src * 'self' 'unsafe-inline' 'unsafe-eval'; style-src * 'self' 'unsafe-inline'; media-src * blob: 'self' 'unsafe-inline'; img-src * 'self' data: blob:;">
   <title>StorySDK</title>
+  
+  <!-- Preloading critical resources -->
+  <link rel="preload" href="https://unpkg.com/react@17/umd/react.production.min.js" as="script" crossorigin>
+  <link rel="preload" href="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js" as="script" crossorigin>
+  <link rel="preload" href="https://cdn.jsdelivr.net/npm/@storysdk/core@1.9.0/dist/bundle.css" as="style">
+  
   <script src="https://unpkg.com/react@17/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js" crossorigin></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@storysdk/core@1.8.8/dist/bundle.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@storysdk/core@1.9.0/dist/bundle.css" />
   
   <style>
     html, body {
@@ -21,12 +27,39 @@
       width: 100%;
       height: 100%;
     }
+    
+    /* Hide container until SDK is loaded */
+    #storysdk-container.loading {
+      visibility: hidden;
+    }
+    
+    /* Styles for loading placeholder */
+    .sdk-loading-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      background-color: #f8f8f8;
+    }
   </style>
 </head>
 <body>
-  <div id="storysdk-container"></div>
+  <div id="storysdk-container" class="loading">
+    <!-- Placeholder will be automatically removed when SDK is loaded -->
+    <div class="sdk-loading-placeholder">
+      <div>Loading...</div>
+    </div>
+  </div>
 
   <script>
+    // Bundle version for cache management
+    const BUNDLE_VERSION = '1.8.8';
+    
+    // Keys for local script caching
+    const SCRIPT_CACHE_KEY = `storysdk:script:${BUNDLE_VERSION}`;
+    const CSS_CACHE_KEY = `storysdk:css:${BUNDLE_VERSION}`;
+    
     function checkBrowserCompatibility() {
       const requiredFeatures = {
         'Promise': typeof Promise !== 'undefined',
@@ -64,8 +97,56 @@
         }
       }
     }
+    
+    // Cache request and check cache validity by version
+    async function fetchWithCache(url, cacheKey, options = {}) {
+      // Check localStorage for cached script
+      try {
+        const cached = localStorage.getItem(cacheKey);
+        
+        if (cached) {
+          const { timestamp, content, version } = JSON.parse(cached);
+          
+          // If version matches and cache is not older than 24 hours, use it
+          if (version === BUNDLE_VERSION && Date.now() - timestamp < 24 * 60 * 60 * 1000) {
+            debug('Using cached resource:', url);
+            return content;
+          }
+        }
+      } catch (e) {
+        debug('Cache reading error:', e);
+      }
+      
+      // If cache doesn't exist or is outdated, load again
+      try {
+        debug('Fetching resource:', url);
+        const response = await fetch(url, options);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
+        }
+        
+        const content = await response.text();
+        
+        // Save to cache
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({
+            timestamp: Date.now(),
+            content,
+            version: BUNDLE_VERSION
+          }));
+        } catch (e) {
+          debug('Cache writing error:', e);
+        }
+        
+        return content;
+      } catch (error) {
+        debug('Fetch error:', error);
+        throw error;
+      }
+    }
 
-    function loadSDKScript(mode) {
+    async function loadSDKScript(mode) {
       return new Promise((resolve, reject) => {
         if (typeof window.Story === 'function') {
           debug('SDK already loaded');
@@ -73,40 +154,72 @@
           return;
         }
 
-        let scriptUrl = 'https://cdn.jsdelivr.net/npm/@storysdk/core@1.8.8/dist/bundle.umd.js';
+        let scriptUrl = 'https://cdn.jsdelivr.net/npm/@storysdk/core@1.9.0/dist/bundle.umd.js';
         
         if (mode === 'development') {
           scriptUrl = 'http://localhost:3003/bundle.umd.js';
+          // In development mode, don't use cache
+          loadScriptDirect(scriptUrl, resolve, reject);
+          return;
         } 
 
         debug('Loading SDK script from:', scriptUrl);
         
-        const script = document.createElement('script');
-        script.onerror = (error) => {
+        // Use caching for production version
+        fetchWithCache(scriptUrl, SCRIPT_CACHE_KEY)
+          .then(scriptContent => {
+            try {
+              // Create and execute script
+              const script = document.createElement('script');
+              script.text = scriptContent;
+              document.head.appendChild(script);
+              
+              if (typeof window.Story === 'function') {
+                resolve(true);
+              } else {
+                reject(new Error('Story constructor not available after script load'));
+              }
+            } catch (error) {
+              debug('Error executing script:', error);
+              // If an error occurs, try traditional loading method
+              loadScriptDirect(scriptUrl, resolve, reject);
+            }
+          })
+          .catch(error => {
+            debug('Error fetching script:', error);
+            // If failed to load via fetch, try traditional method
+            loadScriptDirect(scriptUrl, resolve, reject);
+          });
+      });
+    }
+    
+    // Traditional script loading method by adding <script> tag
+    function loadScriptDirect(url, resolve, reject) {
+      const script = document.createElement('script');
+      script.onerror = (error) => {
+        const errorDetails = {
+          message: 'Failed to load SDK script',
+          details: error.message || 'Unknown error'
+        };
+        postMessageToReactNative('error', errorDetails);
+        reject(error);
+      };
+      
+      script.onload = () => {
+        if (typeof window.Story === 'function') {
+          resolve(true);
+        } else {
           const errorDetails = {
-            message: 'Failed to load SDK script',
-            details: error.message || 'Unknown error'
+            message: 'Story constructor not available after script load'
           };
           postMessageToReactNative('error', errorDetails);
-          reject(error);
-        };
-        
-        script.onload = () => {
-          if (typeof window.Story === 'function') {
-            resolve(true);
-          } else {
-            const errorDetails = {
-              message: 'Story constructor not available after script load'
-            };
-            postMessageToReactNative('error', errorDetails);
-            reject(new Error('Story constructor not available after script load'));
-          }
-        };
-        
-        script.crossOrigin = 'anonymous';
-        script.src = scriptUrl;
-        document.head.appendChild(script);
-      });
+          reject(new Error('Story constructor not available after script load'));
+        }
+      };
+      
+      script.crossOrigin = 'anonymous';
+      script.src = url;
+      document.head.appendChild(script);
     }
 
     async function initSDK(options) {
@@ -138,13 +251,20 @@
           throw new Error('Story constructor not available');
         }
         
-        const storySDK = new window.Story(safeOptions.token, safeOptions);
-
         const container = document.getElementById('storysdk-container');
         if (!container) {
           throw new Error('Container not found');
         }
 
+        const storySDK = new window.Story(safeOptions.token, safeOptions);
+        
+        storySDK.on('dataLoaded', () => {
+          container.classList.remove('loading');
+          postMessageToReactNative('init:success', { 
+            message: 'StorySDK initialized and data loaded successfully'
+          });
+        });
+        
         storySDK.renderGroups(container);
     
         const events = [
@@ -168,11 +288,21 @@
           });
         });
 
-        postMessageToReactNative('init:success', { 
-          message: 'StorySDK initialized successfully'
-        });
+        setTimeout(() => {
+          if (container.classList.contains('loading')) {
+            container.classList.remove('loading');
+            postMessageToReactNative('init:success', { 
+              message: 'StorySDK initialized successfully (timeout fallback)'
+            });
+          }
+        }, 10000);
       } catch (error) {
         debug('SDK initialization error:', error);
+        
+        const container = document.getElementById('storysdk-container');
+        if (container) {
+          container.classList.remove('loading');
+        }
         
         postMessageToReactNative('error', { 
           message: 'Failed to initialize SDK',
@@ -187,10 +317,8 @@
         debug('Message received:', message);
         
         if (message.type === 'init') {
-          const options = typeof message.options === 'string' 
-            ? JSON.parse(message.options) 
-            : message.options;
-        
+          const options = message.options || message.data;
+          
           initSDK(options);
         }
       } catch (error) {

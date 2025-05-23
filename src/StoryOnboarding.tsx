@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StoryModal } from './StoryModal';
+import { OnboardingStorage } from './OnboardingStorage';
 
 interface StoryOnboardingProps {
   token: string;
@@ -16,6 +17,8 @@ interface StoryOnboardingProps {
   onEvent?: (event: string, data: any) => void;
   isOpen?: boolean;
   setIsOpen?: (isOpen: boolean) => void;
+  forceShow?: boolean;
+  disableAutoSave?: boolean;
 }
 
 /**
@@ -37,13 +40,70 @@ export const StoryOnboarding: React.FC<StoryOnboardingProps> = ({
   onEvent,
   isOpen: externalIsOpen,
   setIsOpen: externalSetIsOpen,
+  forceShow = false,
+  disableAutoSave = false,
 }) => {
-  const [internalIsOpen, setInternalIsOpen] = useState(true);
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Check onboarding completion state on mount
+  useEffect(() => {
+    const checkOnboardingCompletion = async () => {
+      try {
+        // If developer controls state manually, don't check saved state
+        if (externalIsOpen !== undefined) {
+          setIsLoading(false);
+          return;
+        }
+
+        // If forceShow is true, show onboarding regardless of previous state
+        if (forceShow) {
+          setInternalIsOpen(true);
+          setIsLoading(false);
+          return;
+        }
+
+        // Check if onboarding was completed before
+        const isCompleted = await OnboardingStorage.isOnboardingCompleted(token, onboardingId);
+
+        // Show onboarding only if it wasn't completed
+        setInternalIsOpen(!isCompleted);
+      } catch (error) {
+        // In case of error, show onboarding (safe fallback)
+        setInternalIsOpen(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkOnboardingCompletion();
+  }, [token, onboardingId, externalIsOpen, forceShow]);
+
+  // Determine current onboarding open state
   const isOpen = externalIsOpen ?? internalIsOpen;
   const setIsOpen = externalSetIsOpen ?? setInternalIsOpen;
 
-  if (!isOpen) {
+  // Close handler with state saving
+  const handleClose = async () => {
+    try {
+      // Save completion state if auto-save is not disabled
+      if (!disableAutoSave) {
+        await OnboardingStorage.markOnboardingCompleted(token, onboardingId);
+      }
+    } catch (error) {
+      // Don't block closing in case of save error
+      console.warn('Failed to save onboarding completion:', error);
+    }
+
+    // Close onboarding
+    setIsOpen(false);
+
+    // Call user handler
+    onClose?.();
+  };
+
+  // Show null during loading or if onboarding should not be open
+  if (isLoading || !isOpen) {
     return null;
   }
 
@@ -59,10 +119,7 @@ export const StoryOnboarding: React.FC<StoryOnboardingProps> = ({
     forbidClose={forbidClose}
     autoplay={true}
     isOnboarding={true}
-    onClose={() => {
-      setIsOpen(false);
-      onClose?.();
-    }}
+    onClose={handleClose}
     onError={onError}
     onEvent={onEvent}
   />;

@@ -7,3 +7,4 @@ export * from './StoryModal';
 export * from './StoryGroups';
 export * from './StoryOnboarding';
 export * from './StorageHandler';
+export * from './OnboardingStorage';

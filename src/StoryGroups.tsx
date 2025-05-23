@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { WebView } from 'react-native-webview';
-import { StyleSheet, View, Platform } from 'react-native';
+import { StyleSheet, View, Platform, Animated } from 'react-native';
 import sdkHtml from './sdk.html';
 import { StorageHandler } from './StorageHandler';
+import { SkeletonLoader } from './SkeletonLoader';
 
 interface StoryGroupsProps {
   token: string;
@@ -46,6 +47,44 @@ export const StoryGroups: React.FC<StoryGroupsProps> = ({
   const webViewRef = useRef<WebView>(null);
   const [isReady, setIsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const webViewOpacity = useRef(new Animated.Value(0)).current;
+  const skeletonOpacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    return () => {
+      StorageHandler.flushWrites().catch(() => { });
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isLoading) {
+      Animated.parallel([
+        Animated.timing(skeletonOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(webViewOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        })
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(skeletonOpacity, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(webViewOpacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  }, [isLoading, skeletonOpacity, webViewOpacity]);
 
   useEffect(() => {
     if (webViewRef.current && isReady) {
@@ -63,13 +102,14 @@ export const StoryGroups: React.FC<StoryGroupsProps> = ({
         isDebugMode,
         preventCloseOnGroupClick: true,
         isInReactNativeWebView: true,
+        isOnlyGroups: true,
         platform: Platform.OS,
         devMode
       };
 
       const message = {
         type: 'init',
-        options: JSON.stringify(options),
+        data: options,
       };
 
       if (Platform.OS === 'android') {
@@ -93,6 +133,10 @@ export const StoryGroups: React.FC<StoryGroupsProps> = ({
   const handleMessage = (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
+
+      if (isDebugMode) {
+        console.log('StoryGroups handleMessage', data);
+      }
 
       if (onEvent) {
         onEvent(data.type, data.data);
@@ -118,14 +162,28 @@ export const StoryGroups: React.FC<StoryGroupsProps> = ({
         onGroupClick(data.data.groupId);
       } else if (data.type === 'webview:ready') {
         setIsReady(true);
+      } else if (data.type === 'init:success') {
+        setIsLoading(false);
       } else if (data.type === 'error') {
+        setIsLoading(false);
         if (onError) {
           onError(data);
         }
       }
     } catch (error) {
+      setIsLoading(false);
       if (onError) {
-        onError({ message: 'Error parsing message' });
+        try {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          const errorDetails = error instanceof Error && error.stack ? error.stack : undefined;
+
+          onError({
+            message: `Error parsing message: ${errorMessage}`,
+            details: errorDetails
+          });
+        } catch {
+          onError({ message: 'Error parsing message' });
+        }
       }
     }
   };
@@ -140,49 +198,47 @@ export const StoryGroups: React.FC<StoryGroupsProps> = ({
 
   return (
     <View style={[styles.container, backgroundColor ? { backgroundColor } : null]}>
-      <WebView
-        ref={webViewRef}
-        source={{ html: sdkHtml }}
-        onMessage={handleMessage}
-        onError={handleWebViewError}
-        onHttpError={(syntheticEvent) => {
-          const { nativeEvent } = syntheticEvent;
+      <Animated.View style={[styles.skeletonContainer, { opacity: skeletonOpacity }]}>
+        <SkeletonLoader
+          groupImageWidth={groupImageWidth}
+          groupImageHeight={groupImageHeight}
+          backgroundColor={backgroundColor}
+        />
+      </Animated.View>
+      <Animated.View style={[styles.webviewContainer, { opacity: webViewOpacity }]}>
+        <WebView
+          ref={webViewRef}
+          source={{ html: sdkHtml }}
+          onMessage={handleMessage}
+          onError={handleWebViewError}
+          onHttpError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
 
-          if (onError) {
-            onError({ message: 'WebView HTTP error', details: JSON.stringify(nativeEvent) });
-          }
-        }}
-        onRenderProcessGone={syntheticEvent => {
-          webViewRef.current?.reload();
-        }}
-        onLoadProgress={({ nativeEvent }) => {
-          if (Platform.OS === 'android' && nativeEvent.progress > 0.5) {
-            setIsLoading(false);
-          }
-        }}
-        onLoad={() => {
-          setIsLoading(false);
-        }}
-        onLoadEnd={() => {
-          setIsLoading(false);
-        }}
-        style={[styles.webview, isLoading && { opacity: 0 }]}
-        allowsInlineMediaPlayback={true}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        originWhitelist={['*']}
-        androidLayerType="hardware"
-        cacheEnabled={true}
-        onContentProcessDidTerminate={() => {
-          webViewRef.current?.reload();
-        }}
-        nestedScrollEnabled={true}
-        overScrollMode="never"
-        thirdPartyCookiesEnabled={true}
-        javaScriptCanOpenWindowsAutomatically={true}
-        setSupportMultipleWindows={false}
-        allowFileAccess={true}
-      />
+            if (onError) {
+              onError({ message: 'WebView HTTP error', details: JSON.stringify(nativeEvent) });
+            }
+          }}
+          onRenderProcessGone={syntheticEvent => {
+            webViewRef.current?.reload();
+          }}
+          style={styles.webview}
+          allowsInlineMediaPlayback={true}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          originWhitelist={['*']}
+          androidLayerType="hardware"
+          cacheEnabled={true}
+          onContentProcessDidTerminate={() => {
+            webViewRef.current?.reload();
+          }}
+          nestedScrollEnabled={true}
+          overScrollMode="never"
+          thirdPartyCookiesEnabled={true}
+          javaScriptCanOpenWindowsAutomatically={true}
+          setSupportMultipleWindows={false}
+          allowFileAccess={true}
+        />
+      </Animated.View>
     </View>
   );
 };
@@ -190,15 +246,23 @@ export const StoryGroups: React.FC<StoryGroupsProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    height: 120
+    height: 120,
+    position: 'relative'
+  },
+  skeletonContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 100,
+  },
+  webviewContainer: {
+    flex: 1,
   },
   webview: {
     flex: 1,
     overflowY: 'hidden',
-    ...Platform.select({
-      android: {
-        backgroundColor: 'transparent',
-      }
-    })
+    backgroundColor: 'transparent'
   },
 }); 

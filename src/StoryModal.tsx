@@ -44,6 +44,13 @@ export const StoryModal: React.FC<StoryModalProps> = ({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // When component unmounts, flush all pending writes to storage
+    return () => {
+      StorageHandler.flushWrites().catch(() => { });
+    };
+  }, [groupId]);
+
+  useEffect(() => {
     if (groupId) {
       setIsReady(false);
       setIsLoading(true);
@@ -69,7 +76,7 @@ export const StoryModal: React.FC<StoryModalProps> = ({
 
       const message = {
         type: 'init',
-        options: options,
+        data: options,
       };
 
       if (Platform.OS === 'android') {
@@ -79,7 +86,7 @@ export const StoryModal: React.FC<StoryModalProps> = ({
               try {
                 const message = {
                   type: '${message.type}',
-                  options: ${JSON.stringify(options)}
+                  data: ${JSON.stringify(options)}
                 };
                 window.dispatchEvent(new MessageEvent('message', {
                   data: JSON.stringify(message)
@@ -100,7 +107,11 @@ export const StoryModal: React.FC<StoryModalProps> = ({
 
   const handleMessage = (event: any) => {
     try {
-      const data = JSON.parse(event.nativeEvent.data);
+      const data = JSON.parse(event.nativeEvent.data)
+
+      if (isDebugMode) {
+        console.log('StoryModal handleMessage', data);
+      }
 
       // Processing storage messages
       if (data.type === 'storysdk:storage:get' || data.type === 'storysdk:storage:set') {
@@ -179,18 +190,7 @@ export const StoryModal: React.FC<StoryModalProps> = ({
             onRenderProcessGone={() => {
               webViewRef.current?.reload();
             }}
-            onLoadProgress={({ nativeEvent }) => {
-              if (Platform.OS === 'android' && nativeEvent.progress > 0.5) {
-                setIsLoading(false);
-              }
-            }}
-            onLoad={() => {
-              setIsLoading(false);
-            }}
-            onLoadEnd={() => {
-              setIsLoading(false);
-            }}
-            style={[styles.webview, isLoading && styles.hiddenWebView]}
+            style={[styles.webview]}
             javaScriptEnabled={true}
             domStorageEnabled={true}
             allowsInlineMediaPlayback={true}
@@ -229,8 +229,5 @@ const styles = StyleSheet.create({
   },
   webview: {
     flex: 1,
-  },
-  hiddenWebView: {
-    opacity: 0,
-  },
+  }
 }); 
