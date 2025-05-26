@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StoryModal } from './StoryModal';
 import { OnboardingStorage } from './OnboardingStorage';
+import { TokenManager } from './TokenManager';
 
 interface StoryOnboardingProps {
   token: string;
@@ -45,6 +46,24 @@ export const StoryOnboarding: React.FC<StoryOnboardingProps> = ({
 }) => {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Initialize token and clear cache if token changed
+  useEffect(() => {
+    const initializeToken = async () => {
+      try {
+        const cacheCleared = await TokenManager.initializeWithToken(token);
+        if (cacheCleared && isDebugMode) {
+          console.log('StoryOnboarding: Cache cleared due to token change');
+        }
+      } catch (error) {
+        if (isDebugMode) {
+          console.warn('StoryOnboarding: Error initializing token:', error);
+        }
+      }
+    };
+
+    initializeToken();
+  }, [token, isDebugMode]);
 
   // Check onboarding completion state on mount
   useEffect(() => {

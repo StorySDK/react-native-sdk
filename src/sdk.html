@@ -27,34 +27,15 @@
       width: 100%;
       height: 100%;
     }
-    
-    /* Hide container until SDK is loaded */
-    #storysdk-container.loading {
-      visibility: hidden;
-    }
-    
-    /* Styles for loading placeholder */
-    .sdk-loading-placeholder {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: 100%;
-      background-color: #f8f8f8;
-    }
   </style>
 </head>
 <body>
-  <div id="storysdk-container" class="loading">
-    <!-- Placeholder will be automatically removed when SDK is loaded -->
-    <div class="sdk-loading-placeholder">
-      <div>Loading...</div>
-    </div>
+  <div id="storysdk-container" >
   </div>
 
   <script>
     // Bundle version for cache management
-    const BUNDLE_VERSION = '1.8.8';
+    const BUNDLE_VERSION = '1.9.0';
     
     // Keys for local script caching
     const SCRIPT_CACHE_KEY = `storysdk:script:${BUNDLE_VERSION}`;
@@ -154,7 +135,7 @@
           return;
         }
 
-        let scriptUrl = 'https://cdn.jsdelivr.net/npm/@storysdk/core@1.9.0/dist/bundle.umd.js';
+        let scriptUrl = `https://cdn.jsdelivr.net/npm/@storysdk/core@${BUNDLE_VERSION}/dist/bundle.umd.js`;
         
         if (mode === 'development') {
           scriptUrl = 'http://localhost:3003/bundle.umd.js';
@@ -259,7 +240,6 @@
         const storySDK = new window.Story(safeOptions.token, safeOptions);
         
         storySDK.on('dataLoaded', () => {
-          container.classList.remove('loading');
           postMessageToReactNative('init:success', { 
             message: 'StorySDK initialized and data loaded successfully'
           });

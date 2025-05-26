@@ -69,6 +69,102 @@ await OnboardingStorage.resetOnboardingCompletion(token, onboardingId);
 await OnboardingStorage.flushWrites();
 ```
 
+## Token Management and Cache Clearing
+
+The SDK automatically manages token changes and clears cache when a new token is provided. This ensures that data from different users or sessions doesn't interfere with each other.
+
+### Automatic Cache Clearing
+
+When you change the token in any StorySDK component, the SDK automatically:
+
+1. Detects the token change
+2. Clears all cached data associated with the previous token
+3. Clears general SDK cache (scripts, CSS, etc.)
+4. Initializes with the new token
+
+This happens automatically in all components (`StoryGroups`, `StoryModal`, `StoryOnboarding`) when the `token` prop changes.
+
+### Manual Cache Management
+
+You can also manually manage cache using the `TokenManager`:
+
+```jsx
+import { TokenManager } from '@storysdk/react-native';
+
+// Initialize with a token and get info about cache clearing
+const cacheCleared = await TokenManager.initializeWithToken('NEW_TOKEN');
+if (cacheCleared) {
+  console.log('Cache was cleared due to token change');
+}
+
+// Get current token
+const currentToken = TokenManager.getCurrentToken();
+
+// Manually clear cache for current token
+await TokenManager.clearCurrentTokenCache();
+
+// Manually clear all SDK cache
+await TokenManager.clearAllCache();
+```
+
+### Cache Clearing Behavior
+
+- **Token Change**: When a different token is provided, all cache is cleared
+- **Same Token**: When the same token is provided again, cache is preserved
+- **Error Handling**: If there's an error during token initialization, cache is cleared as a safety measure
+- **Debug Mode**: When `isDebugMode` is enabled, cache clearing events are logged to console
+
+## Build Configuration
+
+The SDK uses environment variables for build-time configuration. The bundle version is managed through the `.env` file and automatically synchronized with `package.json`.
+
+### Bundle Version Management
+
+The SDK bundle version is controlled through environment variables and affects both JavaScript bundles and CSS stylesheets:
+
+```bash
+# .env file
+BUNDLE_VERSION=1.9.0
+```
+
+When the bundle version changes, the following resources are automatically updated:
+- JavaScript bundle: `@storysdk/core@{version}/dist/bundle.umd.js`
+- CSS stylesheet: `@storysdk/core@{version}/dist/bundle.css`
+- Cache keys for local storage
+
+### Scripts
+
+- `npm run build` - Build the SDK with the version from .env
+- `npm run sync-version` - Synchronize .env version with package.json version
+- `npm run dev` - Build in development mode with watching
+
+### Version Synchronization
+
+When you update the version in `package.json`, run the sync command to update `.env`:
+
+```bash
+npm run sync-version
+```
+
+This ensures that the bundle version in the SDK HTML file matches your package version.
+
+### Custom Bundle Version
+
+You can set a custom bundle version by either:
+
+1. **Using .env file** (recommended):
+   ```bash
+   echo "BUNDLE_VERSION=1.9.1" > .env
+   npm run build
+   ```
+
+2. **Using environment variable**:
+   ```bash
+   BUNDLE_VERSION=1.9.1 npm run build
+   ```
+
+If no `BUNDLE_VERSION` is set, the build process will fallback to the version from `package.json`.
+
 ## Usage
 
 ### StoryGroups

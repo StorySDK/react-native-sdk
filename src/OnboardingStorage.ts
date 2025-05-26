@@ -172,4 +172,34 @@ export class OnboardingStorage {
   static async flushWrites(): Promise<void> {
     await StorageHandler.flushWrites();
   }
+
+  /**
+   * Clears all cached data for a specific token
+   * This removes all onboarding completion data associated with the token
+   * @param token - User/app token to clear cache for
+   */
+  static async clearTokenCache(token: string): Promise<void> {
+    try {
+      const tokenHash = this.hashString(token);
+      const tokenPrefix = `${this.STORAGE_PREFIX}${tokenHash}:`;
+
+      // Clear cache entries for this token
+      await StorageHandler.clearCacheByPrefix(tokenPrefix);
+    } catch (error) {
+      console.warn('Failed to clear token cache:', error);
+    }
+  }
+
+  /**
+   * Clears all SDK cache data
+   * This removes all onboarding completion data across all tokens
+   */
+  static async clearAllCache(): Promise<void> {
+    try {
+      // Clear all cache entries with the onboarding prefix
+      await StorageHandler.clearCacheByPrefix(this.STORAGE_PREFIX);
+    } catch (error) {
+      console.warn('Failed to clear all cache:', error);
+    }
+  }
 } 

@@ -1,3 +1,5 @@
 node_modules
 .DS_Store
 dist
+
+# .env is intentionally not ignored as it contains build configuration

@@ -3,6 +3,7 @@ import { WebView } from 'react-native-webview';
 import { StyleSheet, View, Platform, Animated } from 'react-native';
 import sdkHtml from './sdk.html';
 import { StorageHandler } from './StorageHandler';
+import { TokenManager } from './TokenManager';
 import { SkeletonLoader } from './SkeletonLoader';
 
 interface StoryGroupsProps {
@@ -49,6 +50,24 @@ export const StoryGroups: React.FC<StoryGroupsProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const webViewOpacity = useRef(new Animated.Value(0)).current;
   const skeletonOpacity = useRef(new Animated.Value(1)).current;
+
+  // Initialize token and clear cache if token changed
+  useEffect(() => {
+    const initializeToken = async () => {
+      try {
+        const cacheCleared = await TokenManager.initializeWithToken(token);
+        if (cacheCleared && isDebugMode) {
+          console.log('StoryGroups: Cache cleared due to token change');
+        }
+      } catch (error) {
+        if (isDebugMode) {
+          console.warn('StoryGroups: Error initializing token:', error);
+        }
+      }
+    };
+
+    initializeToken();
+  }, [token, isDebugMode]);
 
   useEffect(() => {
     return () => {

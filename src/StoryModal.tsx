@@ -3,6 +3,7 @@ import { WebView } from 'react-native-webview';
 import { StyleSheet, View, Modal, Platform } from 'react-native';
 import sdkHtml from './sdk.html';
 import { StorageHandler } from './StorageHandler';
+import { TokenManager } from './TokenManager';
 interface StoryModalProps {
   token: string;
   groupId?: string;
@@ -42,6 +43,24 @@ export const StoryModal: React.FC<StoryModalProps> = ({
   const webViewRef = useRef<WebView>(null);
   const [isReady, setIsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Initialize token and clear cache if token changed
+  useEffect(() => {
+    const initializeToken = async () => {
+      try {
+        const cacheCleared = await TokenManager.initializeWithToken(token);
+        if (cacheCleared && isDebugMode) {
+          console.log('StoryModal: Cache cleared due to token change');
+        }
+      } catch (error) {
+        if (isDebugMode) {
+          console.warn('StoryModal: Error initializing token:', error);
+        }
+      }
+    };
+
+    initializeToken();
+  }, [token, isDebugMode]);
 
   useEffect(() => {
     // When component unmounts, flush all pending writes to storage

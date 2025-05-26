@@ -8,3 +8,4 @@ export * from './StoryGroups';
 export * from './StoryOnboarding';
 export * from './StorageHandler';
 export * from './OnboardingStorage';
+export * from './TokenManager';
