@@ -1,10 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { WebView } from 'react-native-webview';
-import { StyleSheet, View, Platform, Animated } from 'react-native';
+import { StyleSheet, View, Platform } from 'react-native';
 import sdkHtml from './sdk.html';
 import { StorageHandler } from './StorageHandler';
 import { TokenManager } from './TokenManager';
-import { SkeletonLoader } from './SkeletonLoader';
+
+// Constants matching web-sdk GroupsList
+const DEFAULT_GROUP_IMAGE_HEIGHT = 68;
+const DEFAULT_GROUP_TITLE_SIZE = 16;
+const DEFAULT_GROUP_MIN_HEIGHT = 110;
+const DEFAULT_GROUP_TITLE_PADDING = 4;
 
 interface StoryGroupsProps {
   token: string;
@@ -32,8 +37,8 @@ export const StoryGroups: React.FC<StoryGroupsProps> = ({
   token,
   onGroupClick,
   groupImageWidth,
-  groupImageHeight,
-  groupTitleSize,
+  groupImageHeight = DEFAULT_GROUP_IMAGE_HEIGHT,
+  groupTitleSize = DEFAULT_GROUP_TITLE_SIZE,
   groupClassName,
   groupsClassName,
   activeGroupOutlineColor,
@@ -47,9 +52,11 @@ export const StoryGroups: React.FC<StoryGroupsProps> = ({
 }) => {
   const webViewRef = useRef<WebView>(null);
   const [isReady, setIsReady] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const webViewOpacity = useRef(new Animated.Value(0)).current;
-  const skeletonOpacity = useRef(new Animated.Value(1)).current;
+  const [containerHeight, setContainerHeight] = useState(() => {
+    // Calculate initial height based on group parameters
+    const calculatedMinHeight = groupImageHeight + groupTitleSize + DEFAULT_GROUP_TITLE_PADDING * 2;
+    return calculatedMinHeight < DEFAULT_GROUP_MIN_HEIGHT ? DEFAULT_GROUP_MIN_HEIGHT : calculatedMinHeight;
+  });
 
   // Initialize token and clear cache if token changed
   useEffect(() => {
@@ -74,36 +81,6 @@ export const StoryGroups: React.FC<StoryGroupsProps> = ({
       StorageHandler.flushWrites().catch(() => { });
     };
   }, []);
-
-  useEffect(() => {
-    if (isLoading) {
-      Animated.parallel([
-        Animated.timing(skeletonOpacity, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(webViewOpacity, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        })
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(skeletonOpacity, {
-          toValue: 0,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(webViewOpacity, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        })
-      ]).start();
-    }
-  }, [isLoading, skeletonOpacity, webViewOpacity]);
 
   useEffect(() => {
     if (webViewRef.current && isReady) {
@@ -181,16 +158,19 @@ export const StoryGroups: React.FC<StoryGroupsProps> = ({
         onGroupClick(data.data.groupId);
       } else if (data.type === 'webview:ready') {
         setIsReady(true);
-      } else if (data.type === 'init:success') {
-        setIsLoading(false);
+      } else if (data.type === 'content:height') {
+        // Handle content height from WebView - compare with calculated height and use maximum
+        const actualHeight = data.data?.height || DEFAULT_GROUP_MIN_HEIGHT;
+
+        // Use maximum of theoretical and actual heights
+        const finalHeight = Math.max(containerHeight, actualHeight);
+        setContainerHeight(finalHeight);
       } else if (data.type === 'error') {
-        setIsLoading(false);
         if (onError) {
           onError(data);
         }
       }
     } catch (error) {
-      setIsLoading(false);
       if (onError) {
         try {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -215,73 +195,65 @@ export const StoryGroups: React.FC<StoryGroupsProps> = ({
     }
   };
 
-  return (
-    <View style={[styles.container, backgroundColor ? { backgroundColor } : null]}>
-      <Animated.View style={[styles.skeletonContainer, { opacity: skeletonOpacity }]}>
-        <SkeletonLoader
-          groupImageWidth={groupImageWidth}
-          groupImageHeight={groupImageHeight}
-          backgroundColor={backgroundColor}
-        />
-      </Animated.View>
-      <Animated.View style={[styles.webviewContainer, { opacity: webViewOpacity }]}>
-        <WebView
-          ref={webViewRef}
-          source={{ html: sdkHtml }}
-          onMessage={handleMessage}
-          onError={handleWebViewError}
-          onHttpError={(syntheticEvent) => {
-            const { nativeEvent } = syntheticEvent;
+  const handleContainerLayout = (event: any) => {
+    const { height } = event.nativeEvent.layout;
+    const calculatedMinHeight = groupImageHeight + groupTitleSize + DEFAULT_GROUP_TITLE_PADDING * 2;
+    const minAllowedHeight = calculatedMinHeight < DEFAULT_GROUP_MIN_HEIGHT ? DEFAULT_GROUP_MIN_HEIGHT : calculatedMinHeight;
+    const finalHeight = height < minAllowedHeight ? minAllowedHeight : height;
+    setContainerHeight(finalHeight);
+  };
 
-            if (onError) {
-              onError({ message: 'WebView HTTP error', details: JSON.stringify(nativeEvent) });
-            }
-          }}
-          onRenderProcessGone={syntheticEvent => {
-            webViewRef.current?.reload();
-          }}
-          style={styles.webview}
-          allowsInlineMediaPlayback={true}
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-          originWhitelist={['*']}
-          androidLayerType="hardware"
-          cacheEnabled={true}
-          onContentProcessDidTerminate={() => {
-            webViewRef.current?.reload();
-          }}
-          nestedScrollEnabled={true}
-          overScrollMode="never"
-          thirdPartyCookiesEnabled={true}
-          javaScriptCanOpenWindowsAutomatically={true}
-          setSupportMultipleWindows={false}
-          allowFileAccess={true}
-        />
-      </Animated.View>
+  return (
+    <View
+      style={[styles.container, backgroundColor ? { backgroundColor } : null]}
+      onLayout={handleContainerLayout}
+    >
+      <WebView
+        ref={webViewRef}
+        source={{ html: sdkHtml }}
+        onMessage={handleMessage}
+        onError={handleWebViewError}
+        onHttpError={(syntheticEvent) => {
+          const { nativeEvent } = syntheticEvent;
+
+          if (onError) {
+            onError({ message: 'WebView HTTP error', details: JSON.stringify(nativeEvent) });
+          }
+        }}
+        onRenderProcessGone={syntheticEvent => {
+          webViewRef.current?.reload();
+        }}
+        style={[styles.webview, { height: containerHeight }]}
+        allowsInlineMediaPlayback={true}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        originWhitelist={['*']}
+        androidLayerType="hardware"
+        cacheEnabled={true}
+        onContentProcessDidTerminate={() => {
+          webViewRef.current?.reload();
+        }}
+        scrollEnabled={false}
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
+        overScrollMode="never"
+        thirdPartyCookiesEnabled={true}
+        javaScriptCanOpenWindowsAutomatically={true}
+        setSupportMultipleWindows={false}
+        allowFileAccess={true}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    height: 120,
-    position: 'relative'
-  },
-  skeletonContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 100,
-  },
-  webviewContainer: {
+    width: '100%',
+    minHeight: DEFAULT_GROUP_MIN_HEIGHT,
     flex: 1,
   },
   webview: {
+    backgroundColor: 'transparent',
     flex: 1,
-    overflowY: 'hidden',
-    backgroundColor: 'transparent'
   },
 }); 
