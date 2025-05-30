@@ -54,65 +54,167 @@ The SDK includes automatic onboarding completion tracking. When users complete a
 ### Managing Onboarding Completion
 
 ```jsx
-import { OnboardingStorage } from '@storysdk/react-native';
+import { CacheManager } from '@storysdk/react-native';
 
 // Check if specific onboarding was completed
-const isCompleted = await OnboardingStorage.isOnboardingCompleted(token, onboardingId);
+const isCompleted = await CacheManager.isOnboardingCompleted(token, onboardingId);
 
 // Mark onboarding as completed manually
-await OnboardingStorage.markOnboardingCompleted(token, onboardingId);
+await CacheManager.markOnboardingCompleted(token, onboardingId);
 
 // Reset onboarding completion (for testing/debugging)
-await OnboardingStorage.resetOnboardingCompletion(token, onboardingId);
+await CacheManager.resetOnboardingCompletion(token, onboardingId);
 
 // Flush pending writes (call before app goes to background)
-await OnboardingStorage.flushWrites();
+await CacheManager.flushWrites();
 ```
 
-## Token Management and Cache Clearing
+## Cache Management System
 
-The SDK automatically manages token changes and clears cache when a new token is provided. This ensures that data from different users or sessions doesn't interfere with each other.
+The SDK features a unified cache management system through the `CacheManager` class that handles tokens, data caching, and onboarding completion state. Each component type (StoryGroups, StoryModal, StoryOnboarding) maintains separate cache namespaces to prevent conflicts.
 
-### Automatic Cache Clearing
+### Component-Specific Caching
 
-When you change the token in any StorySDK component, the SDK automatically:
+The SDK automatically manages cache for each component type independently:
 
-1. Detects the token change
-2. Clears all cached data associated with the previous token
-3. Clears general SDK cache (scripts, CSS, etc.)
-4. Initializes with the new token
+- **StoryGroups**: Caches group lists and metadata with "groups" component type
+- **StoryModal**: Caches story content and media with "modal" component type  
+- **StoryOnboarding**: Caches onboarding flows and completion state with "onboarding" component type
 
-This happens automatically in all components (`StoryGroups`, `StoryModal`, `StoryOnboarding`) when the `token` prop changes.
+### Automatic Cache Management
 
-### Manual Cache Management
+When you change tokens in any StorySDK component:
 
-You can also manually manage cache using the `TokenManager`:
+1. **Component Isolation**: Only the cache for that specific component type is affected
+2. **Token Detection**: SDK detects token changes per component independently
+3. **Selective Clearing**: Only cached data for the previous token and component type is cleared
+4. **Shared Token Support**: Multiple components can safely use the same token
+
+This allows you to use `StoryGroups` and `StoryOnboarding` together with different tokens without cache conflicts.
+
+### CacheManager API
+
+The `CacheManager` provides a unified interface for all caching operations:
 
 ```jsx
-import { TokenManager } from '@storysdk/react-native';
+import { CacheManager } from '@storysdk/react-native';
 
-// Initialize with a token and get info about cache clearing
-const cacheCleared = await TokenManager.initializeWithToken('NEW_TOKEN');
-if (cacheCleared) {
-  console.log('Cache was cleared due to token change');
-}
+// Token Management
+// Initialize specific component with token
+const cacheCleared = await CacheManager.initializeWithToken('groups', 'TOKEN_1');
 
-// Get current token
-const currentToken = TokenManager.getCurrentToken();
+// Legacy API for backward compatibility  
+const cacheCleared = await CacheManager.initializeWithToken('TOKEN_1');
 
-// Manually clear cache for current token
-await TokenManager.clearCurrentTokenCache();
+// Note: getCurrentToken is deprecated. Always use token from props instead.
+// Tokens are passed directly to components from props and should not be cached.
 
-// Manually clear all SDK cache
-await TokenManager.clearAllCache();
+// Get overview of all component tokens
+const tokensInfo = CacheManager.getComponentTokensInfo();
+// Returns: { groups: 'TOKEN_1', modal: 'TOKEN_2', onboarding: 'TOKEN_1' }
+
+// Check for token conflicts (multiple components using same token)
+const hasConflicts = CacheManager.hasTokenConflicts();
+```
+
+### Data Cache Management
+
+Advanced data caching with TTL and version control:
+
+```jsx
+import { CacheManager } from '@storysdk/react-native';
+
+// Cache data for specific component and token
+await CacheManager.setData(
+  'groups',           // component type
+  'TOKEN_1',          // token
+  'groupsList',       // data type
+  groupsData,         // data to cache
+  10 * 60 * 1000     // TTL in milliseconds (10 minutes)
+);
+
+// Retrieve cached data
+const cachedData = await CacheManager.getData('groups', 'TOKEN_1', 'groupsList');
+
+// Check if data exists (without checking expiration)
+const exists = await CacheManager.hasData('groups', 'TOKEN_1', 'groupsList');
+
+// Remove specific data from cache
+await CacheManager.removeData('groups', 'TOKEN_1', 'groupsList');
+
+// Preload cache for better performance
+await CacheManager.preloadCache('groups', 'TOKEN_1', ['groupsList', 'groupsMetadata']);
+```
+
+### Onboarding Management
+
+Built-in onboarding completion tracking:
+
+```jsx
+import { CacheManager } from '@storysdk/react-native';
+
+// Check if onboarding was completed
+const isCompleted = await CacheManager.isOnboardingCompleted('TOKEN_1', 'welcome');
+
+// Mark onboarding as completed
+await CacheManager.markOnboardingCompleted('TOKEN_1', 'welcome');
+
+// Reset onboarding completion (for testing)
+await CacheManager.resetOnboardingCompletion('TOKEN_1', 'welcome');
+
+// Preload onboarding data
+await CacheManager.preloadOnboardings('TOKEN_1', ['welcome', 'tutorial']);
+```
+
+### Cache Clearing Operations
+
+Granular cache clearing capabilities:
+
+```jsx
+import { CacheManager } from '@storysdk/react-native';
+
+// Clear cache for specific component and current token
+await CacheManager.clearCurrentTokenCache('groups');
+
+// Clear cache for specific component and token
+await CacheManager.clearComponentTokenCache('groups', 'TOKEN_1');
+
+// Clear data cache for specific component and token
+await CacheManager.clearComponentTokenDataCache('groups', 'TOKEN_1');
+
+// Clear all data cache for a token across all components
+await CacheManager.clearTokenDataCache('TOKEN_1');
+
+// Clear onboarding cache for specific token
+await CacheManager.clearOnboardingTokenCache('TOKEN_1');
+
+// Clear all SDK cache (nuclear option)
+await CacheManager.clearAllCache();
+
+// Flush pending writes to storage
+await CacheManager.flushWrites();
 ```
 
 ### Cache Clearing Behavior
 
-- **Token Change**: When a different token is provided, all cache is cleared
-- **Same Token**: When the same token is provided again, cache is preserved
-- **Error Handling**: If there's an error during token initialization, cache is cleared as a safety measure
-- **Debug Mode**: When `isDebugMode` is enabled, cache clearing events are logged to console
+- **Component-Specific**: Changing token for StoryGroups only affects StoryGroups cache
+- **Token Isolation**: Each component maintains separate cache even with same token
+- **Version Control**: Cache is automatically invalidated when SDK version changes
+- **TTL Support**: Cached data expires automatically based on configured TTL
+- **Error Handling**: Cache is cleared safely if errors occur during token operations
+- **Debug Logging**: Cache operations are logged when `isDebugMode` is enabled
+
+### Multiple Components Example
+
+```jsx
+// Using different tokens for different components - no cache conflicts
+<StoryGroups token="TOKEN_USER_1" />
+<StoryOnboarding token="TOKEN_USER_2" onboardingId="welcome" />
+
+// Using same token for different components - separate cache namespaces
+<StoryGroups token="SHARED_TOKEN" />
+<StoryOnboarding token="SHARED_TOKEN" onboardingId="tutorial" />
+```
 
 ## Build Configuration
 
@@ -186,6 +288,30 @@ import { StoryGroups } from '@storysdk/react-native';
   groupTitleSize={14}
 />
 ```
+
+## Migration Guide
+
+### From TokenManager and OnboardingStorage to CacheManager
+
+If you're upgrading from previous versions that used `TokenManager` and `OnboardingStorage` separately, these classes have been unified into `CacheManager`. The API remains the same for backward compatibility:
+
+**Old way (still works):**
+```jsx
+import { TokenManager, OnboardingStorage } from '@storysdk/react-native';
+
+await TokenManager.initializeWithToken('TOKEN');
+await OnboardingStorage.markOnboardingCompleted('TOKEN', 'id');
+```
+
+**New recommended way:**
+```jsx
+import { CacheManager } from '@storysdk/react-native';
+
+await CacheManager.initializeWithToken('TOKEN');
+await CacheManager.markOnboardingCompleted('TOKEN', 'id');
+```
+
+Both approaches work identically due to legacy exports, but using `CacheManager` directly is recommended for new code as it provides the complete API in a single class.
 
 ### StoryModal
 
@@ -400,7 +526,7 @@ export default App;
 ```jsx
 import React, { useState, useEffect } from 'react';
 import { View, Button, AppState } from 'react-native';
-import { StoryOnboarding, OnboardingStorage, initializeStorage } from '@storysdk/react-native';
+import { StoryOnboarding, CacheManager, initializeStorage } from '@storysdk/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Initialize storage once at app startup
@@ -417,7 +543,7 @@ const App = () => {
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       try {
-        const isCompleted = await OnboardingStorage.isOnboardingCompleted(token, onboardingId);
+        const isCompleted = await CacheManager.isOnboardingCompleted(token, onboardingId);
         if (!isCompleted) {
           setShowOnboarding(true);
         }
@@ -437,7 +563,7 @@ const App = () => {
   useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === 'background') {
-        OnboardingStorage.flushWrites();
+        CacheManager.flushWrites();
       }
     };
 
@@ -451,7 +577,7 @@ const App = () => {
   };
 
   const resetOnboarding = async () => {
-    await OnboardingStorage.resetOnboardingCompletion(token, onboardingId);
+    await CacheManager.resetOnboardingCompletion(token, onboardingId);
     setShowOnboarding(true);
   };
 
@@ -485,7 +611,7 @@ export default App;
 ```jsx
 import React, { useState } from 'react';
 import { View, Button } from 'react-native';
-import { StoryOnboarding, OnboardingStorage } from '@storysdk/react-native';
+import { StoryOnboarding, CacheManager } from '@storysdk/react-native';
 
 const TestOnboarding = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -498,12 +624,12 @@ const TestOnboarding = () => {
   };
 
   const checkCompletionStatus = async () => {
-    const isCompleted = await OnboardingStorage.isOnboardingCompleted(token, onboardingId);
+    const isCompleted = await CacheManager.isOnboardingCompleted(token, onboardingId);
     console.log('Onboarding completed:', isCompleted);
   };
 
   const resetCompletion = async () => {
-    await OnboardingStorage.resetOnboardingCompletion(token, onboardingId);
+    await CacheManager.resetOnboardingCompletion(token, onboardingId);
     console.log('Onboarding completion reset');
   };
 
@@ -552,3 +678,97 @@ Add the following to your Android project's `AndroidManifest.xml` file:
 ```xml
 <uses-permission android:name="android.permission.WAKE_LOCK" />
 ```
+
+## Cache Troubleshooting
+
+### Problem: Old data is displayed after token change
+
+If old groups/data are still displayed after changing the token, try the following solutions:
+
+#### Web SDK Cache Keys Reference
+
+The React Native SDK automatically clears the following cache keys from the Web SDK when tokens change:
+
+**API Cache (server responses):**
+- `storysdk_api_cache_${token}_/app` - App configuration data
+- `storysdk_api_cache_${token}_/groups` - Groups list data  
+- `storysdk_api_cache_${token}_/groups/${groupId}/stories` - Stories for specific group
+
+**Adapted Data Cache (processed UI data):**
+- `storysdk_adapted_${token}_${language}_${userId}` - Processed stories data (new format)
+- `storysdk_adapted_${token}_${language}_${userId}_groups_only` - Groups-only adapted data
+- `storysdk_adapted_${token}_${language}_${userId}_with_stories` - Groups with stories
+- `storysdk_adapted_data_${token}_${language}_${userId}` - Legacy adapted data format
+
+**Raw Data Cache:**
+- `storysdk_groups_${token}_${language}_${userId}` - Raw groups data
+- `storysdk_stories_${token}_${language}_${userId}_group_${groupId}` - Stories for specific group
+- `storysdk_app_${token}_${language}_${userId}` - App configuration
+
+**User Identity Cache:**
+- `storysdk_user_id` - Current user ID format
+- `uniq_user_id` - Legacy user ID format
+
+**WebView Script/CSS Cache:**
+- `storysdk:script:${bundleVersion}` - Cached JavaScript bundle
+- `storysdk:css:${bundleVersion}` - Cached CSS bundle
+- `storysdk:script:${bundleVersion}:${tokenHash}` - Token-specific script cache
+- `storysdk:css:${bundleVersion}:${tokenHash}` - Token-specific CSS cache
+
+#### 1. Standard cache clearing
+```typescript
+import { CacheManager } from '@storysdk/react-native-sdk';
+
+// Clear all SDK cache
+await CacheManager.clearAllCache();
+```
+
+#### 2. Aggressive cache clearing (if standard doesn't help)
+```typescript
+// Aggressive clearing of all caches including WebView localStorage
+await CacheManager.clearAllCacheAggressive();
+```
+
+#### 3. Disable caching
+```typescript
+<StoryGroups 
+  token="NEW_TOKEN"
+  disableCache={true}  // Disables all types of caching
+  onGroupClick={handleGroupClick}
+/>
+```
+
+#### 4. Cache state diagnostics
+```typescript
+// Get information about current cache state
+const diagnostics = await CacheManager.diagnoseCacheState('groups', 'YOUR_TOKEN');
+console.log('Cache diagnostics:', diagnostics);
+```
+
+#### 5. Force WebView reload
+The component automatically reloads WebView when token changes, but if the problem persists, make sure that:
+- You are passing the new token as a prop
+- `disableCache={true}` is set temporarily for testing
+- You call `clearAllCacheAggressive()` before changing the token
+
+### Steps to take when encountering cache issues:
+
+1. **First step** - try standard clearing:
+   ```typescript
+   await CacheManager.clearAllCache();
+   ```
+
+2. **If that doesn't help** - use aggressive clearing:
+   ```typescript
+   await CacheManager.clearAllCacheAggressive();
+   ```
+
+3. **For testing** - temporarily disable caching:
+   ```typescript
+   <StoryGroups disableCache={true} token="NEW_TOKEN" />
+   ```
+
+4. **For debugging** - examine cache state:
+   ```typescript
+   const diagnostics = await CacheManager.diagnoseCacheState('groups', 'YOUR_TOKEN');
+   ```

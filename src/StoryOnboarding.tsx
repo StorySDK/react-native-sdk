@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StoryModal } from './StoryModal';
-import { OnboardingStorage } from './OnboardingStorage';
-import { TokenManager } from './TokenManager';
+import { CacheManager } from './CacheManager';
 
 interface StoryOnboardingProps {
   token: string;
@@ -13,6 +12,7 @@ interface StoryOnboardingProps {
   isDebugMode?: boolean;
   devMode?: 'staging' | 'development';
   forbidClose?: boolean;
+  disableCache?: boolean;
   onClose?: () => void;
   onError?: (error: { message: string, details?: string }) => void;
   onEvent?: (event: string, data: any) => void;
@@ -36,6 +36,7 @@ export const StoryOnboarding: React.FC<StoryOnboardingProps> = ({
   isDebugMode,
   devMode,
   forbidClose,
+  disableCache,
   onClose,
   onError,
   onEvent,
@@ -47,11 +48,14 @@ export const StoryOnboarding: React.FC<StoryOnboardingProps> = ({
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize token and clear cache if token changed
+  // Initialize token and clear cache if token changed for onboarding component
   useEffect(() => {
     const initializeToken = async () => {
       try {
-        const cacheCleared = await TokenManager.initializeWithToken(token);
+        // Set debug mode in CacheManager
+        CacheManager.setDebugMode(isDebugMode || false);
+
+        const cacheCleared = await CacheManager.initializeWithToken('onboarding', token);
         if (cacheCleared && isDebugMode) {
           console.log('StoryOnboarding: Cache cleared due to token change');
         }
@@ -83,7 +87,7 @@ export const StoryOnboarding: React.FC<StoryOnboardingProps> = ({
         }
 
         // Check if onboarding was completed before
-        const isCompleted = await OnboardingStorage.isOnboardingCompleted(token, onboardingId);
+        const isCompleted = await CacheManager.isOnboardingCompleted(token, onboardingId);
 
         // Show onboarding only if it wasn't completed
         setInternalIsOpen(!isCompleted);
@@ -107,7 +111,7 @@ export const StoryOnboarding: React.FC<StoryOnboardingProps> = ({
     try {
       // Save completion state if auto-save is not disabled
       if (!disableAutoSave) {
-        await OnboardingStorage.markOnboardingCompleted(token, onboardingId);
+        await CacheManager.markOnboardingCompleted(token, onboardingId);
       }
     } catch (error) {
       // Don't block closing in case of save error
@@ -138,6 +142,7 @@ export const StoryOnboarding: React.FC<StoryOnboardingProps> = ({
     forbidClose={forbidClose}
     autoplay={true}
     isOnboarding={true}
+    disableCache={disableCache}
     onClose={handleClose}
     onError={onError}
     onEvent={onEvent}

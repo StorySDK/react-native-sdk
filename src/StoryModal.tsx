@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { WebView } from 'react-native-webview';
 import { StyleSheet, View, Modal, Platform } from 'react-native';
 import sdkHtml from './sdk.html';
 import { StorageHandler } from './StorageHandler';
-import { TokenManager } from './TokenManager';
+import { CacheManager } from './CacheManager';
+
 interface StoryModalProps {
   token: string;
   groupId?: string;
@@ -16,6 +17,7 @@ interface StoryModalProps {
   forbidClose?: boolean;
   autoplay?: boolean;
   isOnboarding?: boolean;
+  disableCache?: boolean;
   onClose?: () => void;
   onError?: (error: { message: string, details?: string }) => void;
   onEvent?: (event: string, data: any) => void;
@@ -35,22 +37,41 @@ export const StoryModal: React.FC<StoryModalProps> = ({
   backgroundColor,
   isDebugMode,
   devMode,
+  forbidClose,
   autoplay = true,
   isOnboarding,
+  disableCache,
   onError,
   onEvent,
 }) => {
   const webViewRef = useRef<WebView>(null);
   const [isReady, setIsReady] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const webViewReadyReceived = useRef(false);
+  const initializationSent = useRef(false);
 
-  // Initialize token and clear cache if token changed
+  // Initialize token and clear cache if token changed for modal component
   useEffect(() => {
     const initializeToken = async () => {
       try {
-        const cacheCleared = await TokenManager.initializeWithToken(token);
+        // Set debug mode in CacheManager
+        CacheManager.setDebugMode(isDebugMode || false);
+
+        // Reset initialization state when token changes
+        initializationSent.current = false;
+        webViewReadyReceived.current = false;
+        setIsReady(false);
+
+        const cacheCleared = await CacheManager.initializeWithToken('modal', token);
         if (cacheCleared && isDebugMode) {
           console.log('StoryModal: Cache cleared due to token change');
+        }
+
+        // Force WebView reload when token changes to clear all WebView caches
+        if (cacheCleared && webViewRef.current) {
+          if (isDebugMode) {
+            console.log('StoryModal: Forcing WebView reload due to token change');
+          }
+          webViewRef.current.reload();
         }
       } catch (error) {
         if (isDebugMode) {
@@ -63,21 +84,32 @@ export const StoryModal: React.FC<StoryModalProps> = ({
   }, [token, isDebugMode]);
 
   useEffect(() => {
-    // When component unmounts, flush all pending writes to storage
     return () => {
       StorageHandler.flushWrites().catch(() => { });
     };
-  }, [groupId]);
+  }, []);
 
   useEffect(() => {
     if (groupId) {
+      // Reset state when groupId changes
+      initializationSent.current = false;
+      webViewReadyReceived.current = false;
       setIsReady(false);
-      setIsLoading(true);
     }
   }, [groupId]);
 
   useEffect(() => {
-    if (webViewRef.current && groupId && isReady) {
+    if (isDebugMode) {
+      console.log('StoryModal useEffect triggered, isReady:', isReady, 'webViewRef:', !!webViewRef.current, 'initializationSent:', initializationSent.current, 'groupId:', groupId);
+    }
+
+    if (webViewRef.current && groupId && isReady && !initializationSent.current) {
+      initializationSent.current = true;
+
+      if (isDebugMode) {
+        console.log('StoryModal: Sending init message to WebView');
+      }
+
       const options = {
         token,
         groupId,
@@ -88,9 +120,11 @@ export const StoryModal: React.FC<StoryModalProps> = ({
         backgroundColor,
         isDebugMode,
         devMode,
+        forbidClose,
         isInReactNativeWebView: true,
         platform: Platform.OS,
         isOnboarding,
+        disableCache
       };
 
       const message = {
@@ -99,37 +133,43 @@ export const StoryModal: React.FC<StoryModalProps> = ({
       };
 
       if (Platform.OS === 'android') {
-        setTimeout(() => {
-          const jsCode = `
-            (function() {
-              try {
-                const message = {
-                  type: '${message.type}',
-                  data: ${JSON.stringify(options)}
-                };
+        if (webViewRef.current) {
+          webViewRef.current?.injectJavaScript(`
+              (function() {
+                const message = ${JSON.stringify(message)};
+                if (window.STORYSDK_DEBUG) {
+                  console.log('Android: Dispatching init message:', message);
+                }
                 window.dispatchEvent(new MessageEvent('message', {
-                  data: JSON.stringify(message)
+                  data: message
                 }));
                 true;
-              } catch(e) {
-                true;
-              }
-            })();
-          `;
-          webViewRef.current?.injectJavaScript(jsCode);
-        }, 500);
+              })();
+            `);
+        }
       } else {
         webViewRef.current.postMessage(JSON.stringify(message));
       }
+
+      if (isDebugMode) {
+        console.log('StoryModal: Init message sent, message:', message);
+      }
+    } else if (isDebugMode && initializationSent.current) {
+      console.log('StoryModal: Skipping init - already sent');
     }
-  }, [token, groupId, isShowMockup, isStatusBarActive, arrowsColor, backgroundColor, isDebugMode, devMode, isReady, autoplay]);
+  }, [token, groupId, isReady]);
 
   const handleMessage = (event: any) => {
     try {
-      const data = JSON.parse(event.nativeEvent.data)
+      const data = JSON.parse(event.nativeEvent.data);
 
-      if (isDebugMode) {
-        console.log('StoryModal handleMessage', data);
+      if (onEvent) {
+        onEvent(data.type, data.data);
+      }
+
+      // Add detailed debug logging for storysdk:debug:info
+      if (data.type === 'storysdk:debug:info' && isDebugMode) {
+        console.log('StorySDK Debug:', data.data?.message || data.data);
       }
 
       // Processing storage messages
@@ -147,38 +187,79 @@ export const StoryModal: React.FC<StoryModalProps> = ({
         return;
       }
 
-      // Processing events
-      if (onEvent) {
-        onEvent(data.type, data.data);
-      }
-
       if (data.type === 'webview:ready') {
-        setIsReady(true);
+        if (isDebugMode) {
+          console.log('StoryModal: Received webview:ready event', {
+            currentIsReady: isReady,
+            alreadyReceived: webViewReadyReceived.current,
+            timestamp: new Date().toISOString(),
+            eventData: data
+          });
+        }
+
+        // Prevent duplicate processing of webview:ready events
+        if (!webViewReadyReceived.current) {
+          webViewReadyReceived.current = true;
+          if (isDebugMode) {
+            console.log('StoryModal: Processing webview:ready - setting isReady to true');
+          }
+          setIsReady(true);
+        } else {
+          if (isDebugMode) {
+            console.log('StoryModal: Ignoring duplicate webview:ready event');
+          }
+        }
       } else if ((data.type === 'storyModalClose' || data.data?.actionType === 'close') && onClose) {
         onClose();
+      } else if (data.type === 'storysdk:data:loaded') {
+        if (isDebugMode) {
+          console.log('StoryModal: Data loaded successfully', data.data);
+        }
+      } else if (data.type === 'init:success') {
+        if (isDebugMode) {
+          console.log('StoryModal: SDK initialized successfully', data.data);
+        }
       } else if (data.type === 'error') {
-        setIsLoading(false);
+        if (isDebugMode) {
+          console.log('StoryModal: Received error from SDK:', data);
+        }
+
+        if (data.message === 'SDK initialization timeout' && isOnboarding && onClose) {
+          if (isDebugMode) {
+            console.log('StoryModal: SDK initialization timeout for onboarding, auto-closing');
+          }
+          onClose();
+          return;
+        }
+
         if (onError) {
           onError(data);
         }
-      } else if (data.type === 'init:success') {
-        setIsLoading(false);
       }
     } catch (error) {
       if (onError) {
-        onError({ message: 'Error parsing message' });
+        try {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          const errorDetails = error instanceof Error && error.stack ? error.stack : undefined;
+
+          onError({
+            message: `Error parsing message: ${errorMessage}`,
+            details: errorDetails
+          });
+        } catch {
+          onError({ message: 'Error parsing message' });
+        }
       }
     }
   };
 
-  const handleWebViewError = (syntheticEvent: any) => {
+  const handleWebViewError = useCallback((syntheticEvent: any) => {
     const { nativeEvent } = syntheticEvent;
-    setIsLoading(false);
 
     if (onError) {
-      onError({ message: 'WebView error', details: nativeEvent.description || JSON.stringify(nativeEvent) });
+      onError({ message: 'WebView error', details: nativeEvent.description });
     }
-  };
+  }, [onError]);
 
   if (!groupId) {
     return null;
@@ -206,21 +287,35 @@ export const StoryModal: React.FC<StoryModalProps> = ({
                 onError({ message: 'WebView HTTP error', details: JSON.stringify(nativeEvent) });
               }
             }}
-            onRenderProcessGone={() => {
+            onRenderProcessGone={syntheticEvent => {
+              if (isDebugMode) {
+                console.log('StoryModal: WebView render process gone, reloading...');
+              }
+              webViewReadyReceived.current = false;
+              initializationSent.current = false;
+              setIsReady(false);
               webViewRef.current?.reload();
             }}
-            style={[styles.webview]}
+            style={styles.webview}
+            allowsInlineMediaPlayback={true}
             javaScriptEnabled={true}
             domStorageEnabled={true}
-            allowsInlineMediaPlayback={true}
-            mediaPlaybackRequiresUserAction={false}
             originWhitelist={['*']}
+            cacheEnabled={!disableCache}
             mixedContentMode="compatibility"
-            androidLayerType={Platform.OS === 'android' ? 'hardware' : undefined}
-            cacheEnabled={true}
+            allowsFullscreenVideo={false}
+            allowsBackForwardNavigationGestures={false}
+            bounces={false}
             onContentProcessDidTerminate={() => {
+              if (isDebugMode) {
+                console.log('StoryModal: WebView content process terminated, reloading...');
+              }
+              webViewReadyReceived.current = false;
+              initializationSent.current = false;
+              setIsReady(false);
               webViewRef.current?.reload();
             }}
+            mediaPlaybackRequiresUserAction={false}
             nestedScrollEnabled={true}
             overScrollMode="never"
             thirdPartyCookiesEnabled={true}

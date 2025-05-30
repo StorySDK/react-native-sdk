@@ -4,8 +4,11 @@
 interface AsyncStorageInterface {
   getItem(key: string): Promise<string | null>;
   setItem(key: string, value: string): Promise<void>;
+  removeItem?(key: string): Promise<void>;
   multiGet?(keys: string[]): Promise<readonly [string, string | null][]>;
   multiSet?(keyValuePairs: Array<[string, string]>): Promise<void>;
+  multiRemove?(keys: string[]): Promise<void>;
+  getAllKeys?(): Promise<readonly string[]>;
 }
 
 // Global AsyncStorage instance - can be injected by developer
@@ -309,7 +312,16 @@ export class StorageHandler {
             'storysdk:script:',
             'storysdk:css:',
             'storysdk:data:',
-            'storysdk:cache:'
+            'storysdk:cache:',
+            'storysdk:token:',
+            'storysdk_api_cache_',
+            'storysdk_adapted_',
+            'storysdk_adapted_data_',
+            'storysdk_groups_',
+            'storysdk_stories_',
+            'storysdk_app_',
+            'storysdk_user_id',
+            'uniq_user_id'
           ];
 
           // Note: This is a simplified approach. In a production environment,
@@ -371,15 +383,57 @@ export class StorageHandler {
       // Clear AsyncStorage data with matching prefix
       if (injectedAsyncStorage) {
         try {
-          // Note: This is a simplified approach. In a production environment,
-          // you might want to implement getAllKeys() to find all matching keys
-          // For now, we'll just clear the memory caches
+          // Get all keys from AsyncStorage if getAllKeys is available
+          if (typeof injectedAsyncStorage.getAllKeys === 'function') {
+            const allKeys = await injectedAsyncStorage.getAllKeys();
+            const keysToRemove = allKeys.filter((key: string) => key.startsWith(prefix));
+
+            if (keysToRemove.length > 0) {
+              // Use multiRemove if available for better performance
+              if (typeof injectedAsyncStorage.multiRemove === 'function') {
+                await injectedAsyncStorage.multiRemove(keysToRemove);
+              } else {
+                // Fall back to individual removes
+                await Promise.all(
+                  keysToRemove.map((key: string) =>
+                    injectedAsyncStorage!.removeItem ? injectedAsyncStorage!.removeItem(key) : Promise.resolve()
+                  )
+                );
+              }
+            }
+          } else {
+            // Fallback: Try to remove commonly used keys with the prefix
+            // This is a best-effort approach when getAllKeys is not available
+            const commonDataTypes = ['groupsList', 'story', 'onboarding', 'modal', 'groups'];
+            const potentialKeys: string[] = [];
+
+            // Generate potential keys based on common patterns
+            commonDataTypes.forEach(dataType => {
+              potentialKeys.push(`${prefix}${dataType}`);
+              potentialKeys.push(`${prefix}${dataType}:meta`);
+            });
+
+            // Try to remove these keys (will silently fail for non-existent keys)
+            await Promise.all(
+              potentialKeys.map(async (key) => {
+                try {
+                  if (injectedAsyncStorage!.removeItem) {
+                    await injectedAsyncStorage!.removeItem(key);
+                  }
+                } catch (error) {
+                  // Silently ignore errors for non-existent keys
+                }
+              })
+            );
+          }
         } catch (error) {
-          // Silently fail AsyncStorage clearing
+          // Silently fail AsyncStorage clearing - at least memory cache is cleared
+          console.warn('Failed to clear AsyncStorage data by prefix:', error);
         }
       }
     } catch (error) {
-      // Silently fail
+      // Silently fail but log the error
+      console.warn('Failed to clear cache by prefix:', error);
     }
   }
 
@@ -479,9 +533,198 @@ export class StorageHandler {
         }
       }
 
+      // Handle WebView cache clearing messages - these are forwarded to WebView
+      if (parsedMessage.type === 'storysdk:cache:clear' ||
+        parsedMessage.type === 'storysdk:cache:clear:all' ||
+        parsedMessage.type === 'storysdk:cache:clear:resources' ||
+        parsedMessage.type === 'storysdk:webview:reload') {
+
+        const callbackId = parsedMessage.callbackId;
+
+        try {
+          // Forward the message to WebView with injection script
+          // This script will execute inside WebView and perform the actual cache clearing
+          const script = this.generateCacheClearScript(parsedMessage.type, parsedMessage.data);
+
+          // Send the script to be injected into WebView
+          sendResponse(JSON.stringify({
+            type: 'storysdk:webview:inject',
+            callbackId: callbackId,
+            data: {
+              script: script,
+              success: true
+            }
+          }));
+
+          return true;
+        } catch (error) {
+          sendResponse(JSON.stringify({
+            type: 'storysdk:webview:inject',
+            callbackId: callbackId,
+            data: {
+              success: false,
+              error: error instanceof Error ? error.message : 'Unknown error'
+            }
+          }));
+
+          return true;
+        }
+      }
+
       return false;
     } catch (error) {
       return false;
+    }
+  }
+
+  /**
+   * Generates JavaScript code to clear WebView cache
+   */
+  private static generateCacheClearScript(messageType: string, data: any): string {
+    switch (messageType) {
+      case 'storysdk:cache:clear:all':
+        return `
+          (function() {
+            try {
+              // Clear localStorage completely
+              if (typeof localStorage !== 'undefined') {
+                const patterns = ${JSON.stringify(data.patterns || [])};
+                
+                if (patterns.length === 0) {
+                  // Clear everything
+                  localStorage.clear();
+                } else {
+                  // Clear specific patterns
+                  const keys = Object.keys(localStorage);
+                  keys.forEach(key => {
+                    patterns.forEach(pattern => {
+                      const regex = new RegExp(pattern.replace('*', '.*'));
+                      if (regex.test(key)) {
+                        localStorage.removeItem(key);
+                      }
+                    });
+                  });
+                }
+              }
+              
+              // Clear sessionStorage
+              if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.clear();
+              }
+              
+              console.log('WebView cache cleared successfully');
+            } catch (error) {
+              console.warn('Failed to clear WebView cache:', error);
+            }
+          })();
+        `;
+
+      case 'storysdk:cache:clear':
+        return `
+          (function() {
+            try {
+              const patterns = ${JSON.stringify(data.patterns || [])};
+              
+              if (typeof localStorage !== 'undefined' && patterns.length > 0) {
+                const keys = Object.keys(localStorage);
+                keys.forEach(key => {
+                  patterns.forEach(pattern => {
+                    const regex = new RegExp(pattern.replace('*', '.*'));
+                    if (regex.test(key)) {
+                      localStorage.removeItem(key);
+                    }
+                  });
+                });
+              }
+              
+              console.log('WebView token cache cleared successfully');
+            } catch (error) {
+              console.warn('Failed to clear WebView token cache:', error);
+            }
+          })();
+        `;
+
+      case 'storysdk:cache:clear:resources':
+        return `
+          (function() {
+            try {
+              // Clear localStorage and sessionStorage
+              if (typeof localStorage !== 'undefined') {
+                localStorage.clear();
+              }
+              if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.clear();
+              }
+              
+              // Clear any caches available in the browser context
+              if ('caches' in window) {
+                caches.keys().then(names => {
+                  names.forEach(name => {
+                    caches.delete(name);
+                  });
+                });
+              }
+              
+              // Force reload of all stylesheets
+              const stylesheets = document.querySelectorAll('link[rel="stylesheet"]');
+              stylesheets.forEach(link => {
+                const href = link.href;
+                link.href = href + (href.includes('?') ? '&' : '?') + '_cache_bust=' + Date.now();
+              });
+              
+              // Force reload of all scripts
+              const scripts = document.querySelectorAll('script[src]');
+              scripts.forEach(script => {
+                const src = script.src;
+                if (src) {
+                  const newScript = document.createElement('script');
+                  newScript.src = src + (src.includes('?') ? '&' : '?') + '_cache_bust=' + Date.now();
+                  script.parentNode?.replaceChild(newScript, script);
+                }
+              });
+              
+              console.log('WebView resources cache cleared successfully');
+            } catch (error) {
+              console.warn('Failed to clear WebView resources cache:', error);
+            }
+          })();
+        `;
+
+      case 'storysdk:webview:reload':
+        return `
+          (function() {
+            try {
+              // Clear all caches first
+              if (typeof localStorage !== 'undefined') {
+                localStorage.clear();
+              }
+              if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.clear();
+              }
+              
+              if ('caches' in window) {
+                caches.keys().then(names => {
+                  names.forEach(name => {
+                    caches.delete(name);
+                  });
+                });
+              }
+              
+              // Force hard reload
+              if (${data.hardReload === true}) {
+                window.location.reload(true);
+              } else {
+                window.location.reload();
+              }
+            } catch (error) {
+              console.warn('Failed to reload WebView:', error);
+              window.location.reload();
+            }
+          })();
+        `;
+
+      default:
+        return `console.log('Unknown cache clear message type: ${messageType}');`;
     }
   }
 
