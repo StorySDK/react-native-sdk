@@ -16,16 +16,16 @@ interface StoryModalProps {
   devMode?: 'staging' | 'development';
   forbidClose?: boolean;
   autoplay?: boolean;
-  isOnboarding?: boolean;
   disableCache?: boolean;
+  useAsyncStorageOnly?: boolean;
   onClose?: () => void;
   onError?: (error: { message: string, details?: string }) => void;
   onEvent?: (event: string, data: any) => void;
 }
 
 /**
- * Component for displaying stories in a modal window
- * Uses WebView to render stories and handles modal close events
+ * Component for displaying stories in a modal window for mobile platforms
+ * Uses WebView for mobile platforms (iOS/Android)
  */
 export const StoryModal: React.FC<StoryModalProps> = ({
   token,
@@ -39,8 +39,8 @@ export const StoryModal: React.FC<StoryModalProps> = ({
   devMode,
   forbidClose,
   autoplay = true,
-  isOnboarding,
   disableCache,
+  useAsyncStorageOnly,
   onError,
   onEvent,
 }) => {
@@ -49,8 +49,18 @@ export const StoryModal: React.FC<StoryModalProps> = ({
   const webViewReadyReceived = useRef(false);
   const initializationSent = useRef(false);
 
-  // Initialize token and clear cache if token changed for modal component
+  // Check if platform is web and throw error
+  if (Platform.OS === 'web') {
+    console.error('StoryModal is not supported on web platform. Please use StoryModalWeb instead.');
+    return null;
+  }
+
+  // Mobile-specific initialization
   useEffect(() => {
+    if (Platform.OS === 'web') {
+      return;
+    }
+
     const initializeToken = async () => {
       try {
         // Set debug mode in CacheManager
@@ -62,6 +72,9 @@ export const StoryModal: React.FC<StoryModalProps> = ({
         setIsReady(false);
 
         const cacheCleared = await CacheManager.initializeWithToken('modal', token);
+        if (isDebugMode) {
+          console.log('StoryModal: Token initialization result:', { token, cacheCleared });
+        }
         if (cacheCleared && isDebugMode) {
           console.log('StoryModal: Cache cleared due to token change');
         }
@@ -73,6 +86,32 @@ export const StoryModal: React.FC<StoryModalProps> = ({
           }
           webViewRef.current.reload();
         }
+
+        // Also send cache clear message to WebView if needed
+        if (webViewRef.current && (cacheCleared || disableCache)) {
+          const clearCacheMessage = {
+            type: 'storysdk:cache:clear:all',
+            data: {}
+          };
+
+          if (Platform.OS === 'android') {
+            webViewRef.current.injectJavaScript(`
+              (function() {
+                const message = ${JSON.stringify(clearCacheMessage)};
+                window.dispatchEvent(new MessageEvent('message', {
+                  data: JSON.stringify(message)
+                }));
+                true;
+              })();
+            `);
+          } else {
+            webViewRef.current.postMessage(JSON.stringify(clearCacheMessage));
+          }
+
+          if (isDebugMode) {
+            console.log('StoryModal: Sent cache clear message to WebView');
+          }
+        }
       } catch (error) {
         if (isDebugMode) {
           console.warn('StoryModal: Error initializing token:', error);
@@ -81,7 +120,7 @@ export const StoryModal: React.FC<StoryModalProps> = ({
     };
 
     initializeToken();
-  }, [token, isDebugMode]);
+  }, [token, isDebugMode, disableCache]);
 
   useEffect(() => {
     return () => {
@@ -95,10 +134,22 @@ export const StoryModal: React.FC<StoryModalProps> = ({
       initializationSent.current = false;
       webViewReadyReceived.current = false;
       setIsReady(false);
+
+      // Force WebView reload when groupId changes to ensure complete reinitialization
+      if (webViewRef.current) {
+        if (isDebugMode) {
+          console.log('StoryModal: Forcing WebView reload due to groupId change:', groupId);
+        }
+        webViewRef.current.reload();
+      }
     }
-  }, [groupId]);
+  }, [groupId, isDebugMode]);
 
   useEffect(() => {
+    if (Platform.OS === 'web') {
+      return;
+    }
+
     if (isDebugMode) {
       console.log('StoryModal useEffect triggered, isReady:', isReady, 'webViewRef:', !!webViewRef.current, 'initializationSent:', initializationSent.current, 'groupId:', groupId);
     }
@@ -119,12 +170,12 @@ export const StoryModal: React.FC<StoryModalProps> = ({
         arrowsColor,
         backgroundColor,
         isDebugMode,
-        devMode,
         forbidClose,
         isInReactNativeWebView: true,
         platform: Platform.OS,
-        isOnboarding,
-        disableCache
+        disableCache,
+        devMode,
+        useAsyncStorageOnly
       };
 
       const message = {
@@ -141,7 +192,7 @@ export const StoryModal: React.FC<StoryModalProps> = ({
                   console.log('Android: Dispatching init message:', message);
                 }
                 window.dispatchEvent(new MessageEvent('message', {
-                  data: message
+                  data: JSON.stringify(message)
                 }));
                 true;
               })();
@@ -224,9 +275,9 @@ export const StoryModal: React.FC<StoryModalProps> = ({
           console.log('StoryModal: Received error from SDK:', data);
         }
 
-        if (data.message === 'SDK initialization timeout' && isOnboarding && onClose) {
+        if (data.message === 'SDK initialization timeout' && onClose) {
           if (isDebugMode) {
-            console.log('StoryModal: SDK initialization timeout for onboarding, auto-closing');
+            console.log('StoryModal: SDK initialization timeout, auto-closing');
           }
           onClose();
           return;
@@ -265,6 +316,7 @@ export const StoryModal: React.FC<StoryModalProps> = ({
     return null;
   }
 
+  // Mobile platform render (WebView logic)
   return (
     <Modal
       visible={!!groupId}
@@ -276,8 +328,13 @@ export const StoryModal: React.FC<StoryModalProps> = ({
       <View style={styles.modalContainer}>
         <View style={styles.webviewContainer}>
           <WebView
+            key={`webview-${token.substring(0, 8)}-${groupId || 'default'}`}
             ref={webViewRef}
-            source={{ html: sdkHtml }}
+            source={{
+              html: sdkHtml,
+              // Add unique key based on token to prevent caching with old token
+              baseUrl: `storysdk://token-${encodeURIComponent(token).substring(0, 8)}`
+            }}
             onMessage={handleMessage}
             onError={handleWebViewError}
             onHttpError={(syntheticEvent) => {
@@ -302,6 +359,8 @@ export const StoryModal: React.FC<StoryModalProps> = ({
             domStorageEnabled={true}
             originWhitelist={['*']}
             cacheEnabled={!disableCache}
+            // Force reload mode when cache is disabled or token changes
+            cacheMode={disableCache ? 'LOAD_NO_CACHE' : 'LOAD_DEFAULT'}
             mixedContentMode="compatibility"
             allowsFullscreenVideo={false}
             allowsBackForwardNavigationGestures={false}

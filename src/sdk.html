@@ -7,12 +7,13 @@
   <title>StorySDK</title>
   
   <!-- Preloading critical resources -->
-  <link rel="preload" href="https://unpkg.com/react@17/umd/react.production.min.js" as="script" crossorigin>
-  <link rel="preload" href="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js" as="script" crossorigin>
+  <link rel="preload" href="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js" as="script" crossorigin>
+  <link rel="preload" href="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js" as="script" crossorigin>
   <link rel="preload" href="https://cdn.jsdelivr.net/npm/@storysdk/core@1.9.0/dist/bundle.css" as="style">
   
-  <script src="https://unpkg.com/react@17/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+  
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@storysdk/core@1.9.0/dist/bundle.css" />
   
   <style>
@@ -35,6 +36,28 @@
   </div>
 
   <script>
+    // CRITICAL: Clear all SDK global variables to prevent cache issues
+    (function clearSDKGlobals() {
+      try {
+        // Clear all SDK-related global variables
+        delete window.__STORYSDK_INITIALIZED__;
+        delete window.__STORYSDK_PREVIOUS_TOKEN__;
+        delete window.__STORYSDK_INSTANCE__;
+        delete window.__STORYSDK_WEBVIEW_READY_SENT__;
+        delete window.__STORYSDK_API_PREVIOUS_TOKEN__;
+        delete window.STORYSDK_DEBUG;
+        delete window.__STORYSDK_USE_ASYNC_STORAGE_ONLY__;
+        
+        // Also clear Story constructor if exists to force fresh load
+        delete window.Story;
+        delete window.storysdk;
+        
+        console.log('StorySDK: Cleared all global variables to prevent cache issues');
+      } catch (error) {
+        console.warn('StorySDK: Error clearing global variables:', error);
+      }
+    })();
+
     // Bundle version for cache management
     const BUNDLE_VERSION = '1.9.3';
     
@@ -65,34 +88,61 @@
       }
     }
     
-    // Clear localStorage cache for specific token
-    function clearTokenCache(tokenHash) {
+    // Clear storage cache for specific token
+    async function clearTokenCache(tokenHash) {
       try {
-        const keysToRemove = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith('storysdk:') && key.includes(tokenHash)) {
-            keysToRemove.push(key);
+        if (window.ReactNativeWebView) {
+          // Send message to React Native to clear cache by token hash
+          postMessageToReactNative('storysdk:cache:clear:token', {
+            tokenHash: tokenHash,
+            patterns: [`storysdk:*${tokenHash}*`, `storysdk_*${tokenHash}*`]
+          });
+        } else {
+          // Fallback to localStorage
+          const keysToRemove = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('storysdk:') && key.includes(tokenHash)) {
+              keysToRemove.push(key);
+            }
           }
+          keysToRemove.forEach(key => localStorage.removeItem(key));
         }
-        keysToRemove.forEach(key => localStorage.removeItem(key));
-        debug('Cleared localStorage cache for token hash:', tokenHash);
+        debug('Cleared storage cache for token hash:', tokenHash);
       } catch (e) {
         debug('Error clearing token cache:', e);
       }
     }
     
     // Clear ALL SDK-related cache (more aggressive)
-    function clearAllSDKCache() {
+    async function clearAllSDKCache(preserveTokens = false) {
       try {
-        const keysToRemove = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith('storysdk:')) {
-            keysToRemove.push(key);
+        if (window.ReactNativeWebView) {
+          // Send message to React Native to clear all SDK cache
+          // Exclude token patterns if preserveTokens is true
+          const patterns = preserveTokens 
+            ? ['storysdk:script:*', 'storysdk:css:*', 'storysdk:data:*', 'storysdk:cache:*', 'storysdk_*'] 
+            : ['storysdk:*', 'storysdk_*'];
+            
+          postMessageToReactNative('storysdk:cache:clear:all', {
+            patterns: patterns,
+            preserveTokens: preserveTokens
+          });
+        } else {
+          // Fallback to localStorage
+          const keysToRemove = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('storysdk:')) {
+              // Skip token keys if preserveTokens is true
+              if (preserveTokens && key.startsWith('storysdk:token:')) {
+                continue;
+              }
+              keysToRemove.push(key);
+            }
           }
+          keysToRemove.forEach(key => localStorage.removeItem(key));
         }
-        keysToRemove.forEach(key => localStorage.removeItem(key));
         
         if (window.__STORYSDK_INITIALIZED__) {
           window.__STORYSDK_INITIALIZED__ = false;
@@ -101,7 +151,7 @@
           window.__STORYSDK_WEBVIEW_READY_SENT__ = false;
         }
         
-        debug('Cleared all SDK cache and state');
+        debug('Cleared all SDK cache and state', preserveTokens ? '(tokens preserved)' : '');
       } catch (e) {
         debug('Error clearing all SDK cache:', e);
       }
@@ -145,11 +195,235 @@
       }
     }
     
+    // Storage abstraction - uses AsyncStorage via messages when available
+    const StorageProxy = {
+      async getItem(key) {
+        if (window.ReactNativeWebView && window.__STORYSDK_USE_ASYNC_STORAGE_ONLY__) {
+          // Force use of AsyncStorage via React Native messages
+          return new Promise((resolve) => {
+            const callbackId = `get_${Date.now()}_${Math.random()}`;
+            
+            const handleMessage = (event) => {
+              try {
+                const response = JSON.parse(event.data);
+                if (response.type === 'storysdk:storage:response' && response.callbackId === callbackId) {
+                  window.removeEventListener('message', handleMessage);
+                  resolve(response.data.value);
+                }
+              } catch (e) {
+                // Ignore parsing errors
+              }
+            };
+            
+            window.addEventListener('message', handleMessage);
+            
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'storysdk:storage:get',
+              callbackId: callbackId,
+              data: { key }
+            }));
+            
+            // Timeout after 5 seconds
+            setTimeout(() => {
+              window.removeEventListener('message', handleMessage);
+              resolve(null);
+            }, 5000);
+          });
+        } else if (window.ReactNativeWebView) {
+          // Use AsyncStorage via React Native messages
+          return new Promise((resolve) => {
+            const callbackId = `get_${Date.now()}_${Math.random()}`;
+            
+            const handleMessage = (event) => {
+              try {
+                const response = JSON.parse(event.data);
+                if (response.type === 'storysdk:storage:response' && response.callbackId === callbackId) {
+                  window.removeEventListener('message', handleMessage);
+                  resolve(response.data.value);
+                }
+              } catch (e) {
+                // Ignore parsing errors
+              }
+            };
+            
+            window.addEventListener('message', handleMessage);
+            
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'storysdk:storage:get',
+              callbackId: callbackId,
+              data: { key }
+            }));
+            
+            // Timeout after 5 seconds
+            setTimeout(() => {
+              window.removeEventListener('message', handleMessage);
+              resolve(null);
+            }, 5000);
+          });
+        } else {
+          // Fallback to localStorage
+          try {
+            return localStorage.getItem(key);
+          } catch (e) {
+            return null;
+          }
+        }
+      },
+      
+      async setItem(key, value) {
+        if (window.ReactNativeWebView && window.__STORYSDK_USE_ASYNC_STORAGE_ONLY__) {
+          // Force use of AsyncStorage via React Native messages
+          return new Promise((resolve) => {
+            const callbackId = `set_${Date.now()}_${Math.random()}`;
+            
+            const handleMessage = (event) => {
+              try {
+                const response = JSON.parse(event.data);
+                if (response.type === 'storysdk:storage:response' && response.callbackId === callbackId) {
+                  window.removeEventListener('message', handleMessage);
+                  resolve(response.data.success || false);
+                }
+              } catch (e) {
+                // Ignore parsing errors
+              }
+            };
+            
+            window.addEventListener('message', handleMessage);
+            
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'storysdk:storage:set',
+              callbackId: callbackId,
+              data: { key, value }
+            }));
+            
+            // Timeout after 5 seconds
+            setTimeout(() => {
+              window.removeEventListener('message', handleMessage);
+              resolve(false);
+            }, 5000);
+          });
+        } else if (window.ReactNativeWebView) {
+          // Use AsyncStorage via React Native messages
+          return new Promise((resolve) => {
+            const callbackId = `set_${Date.now()}_${Math.random()}`;
+            
+            const handleMessage = (event) => {
+              try {
+                const response = JSON.parse(event.data);
+                if (response.type === 'storysdk:storage:response' && response.callbackId === callbackId) {
+                  window.removeEventListener('message', handleMessage);
+                  resolve(response.data.success || false);
+                }
+              } catch (e) {
+                // Ignore parsing errors
+              }
+            };
+            
+            window.addEventListener('message', handleMessage);
+            
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'storysdk:storage:set',
+              callbackId: callbackId,
+              data: { key, value }
+            }));
+            
+            // Timeout after 5 seconds
+            setTimeout(() => {
+              window.removeEventListener('message', handleMessage);
+              resolve(false);
+            }, 5000);
+          });
+        } else {
+          // Fallback to localStorage
+          try {
+            localStorage.setItem(key, value);
+            return true;
+          } catch (e) {
+            return false;
+          }
+        }
+      },
+      
+      async removeItem(key) {
+        if (window.ReactNativeWebView && window.__STORYSDK_USE_ASYNC_STORAGE_ONLY__) {
+          // Force use of AsyncStorage via React Native messages
+          return new Promise((resolve) => {
+            const callbackId = `remove_${Date.now()}_${Math.random()}`;
+            
+            const handleMessage = (event) => {
+              try {
+                const response = JSON.parse(event.data);
+                if (response.type === 'storysdk:storage:response' && response.callbackId === callbackId) {
+                  window.removeEventListener('message', handleMessage);
+                  resolve(response.data.success || false);
+                }
+              } catch (e) {
+                // Ignore parsing errors
+              }
+            };
+            
+            window.addEventListener('message', handleMessage);
+            
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'storysdk:storage:set',
+              callbackId: callbackId,
+              data: { key, value: null } // Setting to null removes the item
+            }));
+            
+            // Timeout after 5 seconds
+            setTimeout(() => {
+              window.removeEventListener('message', handleMessage);
+              resolve(false);
+            }, 5000);
+          });
+        } else if (window.ReactNativeWebView) {
+          // Use AsyncStorage via React Native messages
+          return new Promise((resolve) => {
+            const callbackId = `remove_${Date.now()}_${Math.random()}`;
+            
+            const handleMessage = (event) => {
+              try {
+                const response = JSON.parse(event.data);
+                if (response.type === 'storysdk:storage:response' && response.callbackId === callbackId) {
+                  window.removeEventListener('message', handleMessage);
+                  resolve(response.data.success || false);
+                }
+              } catch (e) {
+                // Ignore parsing errors
+              }
+            };
+            
+            window.addEventListener('message', handleMessage);
+            
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'storysdk:storage:set',
+              callbackId: callbackId,
+              data: { key, value: null } // Setting to null removes the item
+            }));
+            
+            // Timeout after 5 seconds
+            setTimeout(() => {
+              window.removeEventListener('message', handleMessage);
+              resolve(false);
+            }, 5000);
+          });
+        } else {
+          // Fallback to localStorage
+          try {
+            localStorage.removeItem(key);
+            return true;
+          } catch (e) {
+            return false;
+          }
+        }
+      }
+    };
+
     // Cache request and check cache validity by version
     async function fetchWithCache(url, cacheKey, options = {}) {
-      // Check localStorage for cached script
+      // Check storage for cached script
       try {
-        const cached = localStorage.getItem(cacheKey);
+        const cached = await StorageProxy.getItem(cacheKey);
         
         if (cached) {
           const { timestamp, content, version } = JSON.parse(cached);
@@ -177,7 +451,7 @@
         
         // Save to cache
         try {
-          localStorage.setItem(cacheKey, JSON.stringify({
+          await StorageProxy.setItem(cacheKey, JSON.stringify({
             timestamp: Date.now(),
             content,
             version: BUNDLE_VERSION
@@ -214,13 +488,14 @@
           debug('Development mode: trying multiple localhost URLs');
           postMessageToReactNative('storysdk:debug:info', {
             message: 'Attempting to load development script',
-            urls: possibleUrls
+            urls: possibleUrls,
+            userAgent: navigator.userAgent,
+            location: window.location.href
           });
           
-          tryMultipleUrls(possibleUrls, resolve, reject);
+          // Try development URLs first, then fallback to production
+          tryMultipleUrls(possibleUrls, resolve, reject, scriptUrl);
           return;
-
-          debug('Loading SDK script from:', scriptUrl);
         } else if( mode === 'production') {
         // Use caching for production version
         fetchWithCache(scriptUrl, SCRIPT_CACHE_KEY)
@@ -253,7 +528,7 @@
       });
     }
   
-    async function tryMultipleUrls(urls, resolve, reject) {
+    async function tryMultipleUrls(urls, resolve, reject, fallbackUrl = null) {
       let lastError = null;
       
       for (let i = 0; i < urls.length; i++) {
@@ -292,28 +567,83 @@
         }
       }
 
-      debug('All URLs failed, last error:', lastError);
+      debug('All development URLs failed, last error:', lastError);
       postMessageToReactNative('storysdk:debug:info', {
         message: 'All development URLs failed',
         lastError: lastError?.message
       });
+      
+      // Try fallback to production URL if provided
+      if (fallbackUrl) {
+        debug('Falling back to production URL:', fallbackUrl);
+        postMessageToReactNative('storysdk:debug:info', {
+          message: 'Falling back to production script',
+          url: fallbackUrl
+        });
+        
+        try {
+          // Use caching for production version
+          const scriptContent = await fetchWithCache(fallbackUrl, SCRIPT_CACHE_KEY);
+          const script = document.createElement('script');
+          script.text = scriptContent;
+          document.head.appendChild(script);
+          
+          if (typeof window.Story === 'function') {
+            debug('SDK script loaded successfully from production fallback');
+            postMessageToReactNative('storysdk:debug:info', {
+              message: 'Successfully loaded production script as fallback'
+            });
+            resolve(true);
+            return;
+          } else {
+            debug('Story constructor not available after production script load');
+            throw new Error('Story constructor not available after production script load');
+          }
+        } catch (fallbackError) {
+          debug('Production fallback also failed:', fallbackError);
+          postMessageToReactNative('storysdk:debug:info', {
+            message: 'Production fallback also failed',
+            error: fallbackError.message
+          });
+          
+          // Try direct loading as last resort
+          try {
+            await new Promise((resolveUrl, rejectUrl) => {
+              loadScriptDirect(fallbackUrl, resolveUrl, rejectUrl);
+            });
+            
+            debug('Successfully loaded production script via direct loading');
+            resolve(true);
+            return;
+          } catch (directError) {
+            debug('Direct loading of production script also failed:', directError);
+          }
+        }
+      }
+      
       reject(lastError || new Error('All script URLs failed'));
     }
 
     function loadScriptDirect(url, resolve, reject) {
       const script = document.createElement('script');
 
+      // Reduce timeout for development URLs to fail faster
+      const isDevelopmentUrl = url.includes('localhost') || url.includes('127.0.0.1') || 
+                              url.includes('10.0.2.2') || url.includes('10.0.3.2');
+      const timeoutDuration = isDevelopmentUrl ? 3000 : 10000; // 3s for dev, 10s for production
+
       const timeout = setTimeout(() => {
         script.remove();
         const errorDetails = {
           message: 'Script loading timeout',
           url: url,
-          timeout: '10000ms'
+          timeout: `${timeoutDuration}ms`,
+          isDevelopmentUrl: isDevelopmentUrl
         };
         debug('Script loading timeout:', errorDetails);
         postMessageToReactNative('storysdk:debug:info', errorDetails);
         reject(new Error(`Script loading timeout: ${url}`));
-      }, 10000);
+      }, timeoutDuration);
       
       script.onerror = (error) => {
         clearTimeout(timeout);
@@ -332,17 +662,24 @@
         clearTimeout(timeout);
         debug('Script loaded successfully from:', url);
         
-        if (typeof window.Story === 'function') {
-          resolve(true);
-        } else {
-          const errorDetails = {
-            message: 'Story constructor not available after script load',
-            url: url
-          };
-          debug('Story constructor not available:', errorDetails);
-          postMessageToReactNative('storysdk:debug:info', errorDetails);
-          reject(new Error('Story constructor not available after script load'));
-        }
+        // Give the script a moment to execute
+        setTimeout(() => {
+          if (typeof window.Story === 'function') {
+            debug('Story constructor available after script load');
+            resolve(true);
+          } else {
+            const errorDetails = {
+              message: 'Story constructor not available after script load',
+              url: url,
+              windowKeys: Object.keys(window).filter(k => k.toLowerCase().includes('story')),
+              globalStory: typeof window.Story,
+              globalStorysdk: typeof window.storysdk
+            };
+            debug('Story constructor not available:', errorDetails);
+            postMessageToReactNative('storysdk:debug:info', errorDetails);
+            reject(new Error('Story constructor not available after script load'));
+          }
+        }, 100); // Give 100ms for script execution
       };
 
       if (url.startsWith('http://localhost') || url.startsWith('http://127.0.0.1') || 
@@ -363,14 +700,30 @@
 
     async function initSDK(options) {
       try {
-        // Prevent multiple initializations
-        if (window.__STORYSDK_INITIALIZED__) {
-          debug('SDK already initialized, skipping...');
+        // Check if token changed - if so, force reinitialization
+        const initCurrentToken = options.token;
+        const initPreviousToken = window.__STORYSDK_PREVIOUS_TOKEN__;
+        const tokenChanged = initPreviousToken && initPreviousToken !== initCurrentToken;
+        
+        // If SDK is initialized and token changed, we can just update the token
+        if (window.__STORYSDK_INITIALIZED__ && tokenChanged && window.__STORYSDK_INSTANCE__) {
+          debug('Token changed from', initPreviousToken, 'to', initCurrentToken, ', updating existing instance...');
+          // Continue with token update instead of full reinitialization
+        }
+        // Prevent multiple initializations unless token changed
+        else if (window.__STORYSDK_INITIALIZED__ && !tokenChanged) {
+          debug('SDK already initialized with same token, skipping...');
           return;
+        }
+        
+        if (tokenChanged && !window.__STORYSDK_INSTANCE__) {
+          debug('Token changed but no instance exists, forcing full reinitialization...');
+          window.__STORYSDK_INITIALIZED__ = false;
         }
         
         window.__STORYSDK_INITIALIZED__ = true;
         window.STORYSDK_DEBUG = options.isDebugMode || false;
+        window.__STORYSDK_USE_ASYNC_STORAGE_ONLY__ = options.useAsyncStorageOnly || false;
         debug('Starting SDK initialization with options:', options);
         
         // Send debug info about platform and environment
@@ -400,7 +753,7 @@
         }
 
         // CRITICAL: Clear Web SDK cache when token changes
-        // Store previous token for comparison
+        // Store previous token for comparison  
         const currentToken = options.token;
         const previousToken = window.__STORYSDK_PREVIOUS_TOKEN__;
         
@@ -409,55 +762,90 @@
           
           // Clear Web SDK cache for old token
           const previousTokenHash = simpleHash(previousToken);
-          clearTokenCache(previousTokenHash);
+          await clearTokenCache(previousTokenHash);
           
-          // Also clear main Web SDK cache keys
-          try {
-            const webSdkKeysToRemove = [];
-            for (let i = 0; i < localStorage.length; i++) {
-              const key = localStorage.key(i);
-              if (key && (
-                key.startsWith(`storysdk_api_cache_${previousToken}_`) ||
-                key.startsWith(`storysdk_adapted_${previousToken}_`) ||
-                key.startsWith(`storysdk_adapted_data_${previousToken}_`) ||
-                key.startsWith(`storysdk_groups_${previousToken}_`) ||
-                key.startsWith(`storysdk_stories_${previousToken}_`) ||
-                key.startsWith(`storysdk_app_${previousToken}_`) ||
-                key.startsWith('storysdk_groups_data_') ||
-                key.startsWith('storysdk_stories_data_') ||
-                key.startsWith('storysdk_answers_')
-              )) {
-                webSdkKeysToRemove.push(key);
+          // Also clear main Web SDK cache keys including all API cache
+          if (window.ReactNativeWebView) {
+            // Send message to React Native to clear cache by patterns
+            postMessageToReactNative('storysdk:cache:clear:patterns', {
+              patterns: [
+                `storysdk_api_cache_${previousToken}_*`,
+                `storysdk_adapted_${previousToken}_*`,
+                `storysdk_adapted_data_${previousToken}_*`,
+                `storysdk_groups_${previousToken}_*`,
+                `storysdk_stories_${previousToken}_*`,
+                `storysdk_app_${previousToken}_*`,
+                'storysdk_groups_data_*',
+                'storysdk_stories_data_*',
+                'storysdk_answers_*',
+                'storysdk_api_cache_*'
+              ]
+            });
+          } else {
+            // Fallback to localStorage
+            try {
+              const webSdkKeysToRemove = [];
+              for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (
+                  key.startsWith(`storysdk_api_cache_${previousToken}_`) ||
+                  key.startsWith(`storysdk_adapted_${previousToken}_`) ||
+                  key.startsWith(`storysdk_adapted_data_${previousToken}_`) ||
+                  key.startsWith(`storysdk_groups_${previousToken}_`) ||
+                  key.startsWith(`storysdk_stories_${previousToken}_`) ||
+                  key.startsWith(`storysdk_app_${previousToken}_`) ||
+                  key.startsWith('storysdk_groups_data_') ||
+                  key.startsWith('storysdk_stories_data_') ||
+                  key.startsWith('storysdk_answers_') ||
+                  // Clear all API cache to force fresh data loading
+                  key.startsWith('storysdk_api_cache_')
+                )) {
+                  webSdkKeysToRemove.push(key);
+                }
               }
+              webSdkKeysToRemove.forEach(key => localStorage.removeItem(key));
+              debug('Cleared Web SDK cache keys:', webSdkKeysToRemove.length);
+            } catch (e) {
+              debug('Error clearing Web SDK cache:', e);
             }
-            webSdkKeysToRemove.forEach(key => localStorage.removeItem(key));
-            debug('Cleared Web SDK cache keys:', webSdkKeysToRemove.length);
-          } catch (e) {
-            debug('Error clearing Web SDK cache:', e);
+          }
+          
+          // Reset SDK state to ensure fresh initialization
+          if (window.Story && typeof window.Story.reset === 'function') {
+            try {
+              window.Story.reset();
+              debug('Reset Web SDK state');
+            } catch (e) {
+              debug('Error resetting Web SDK state:', e);
+            }
           }
         }
         
         // Store current token for next comparison
         window.__STORYSDK_PREVIOUS_TOKEN__ = currentToken;
 
+        // CRITICAL: Force update axios headers immediately to ensure correct token
+        if (typeof axios !== 'undefined' && currentToken) {
+          try {
+            axios.defaults.headers.common = { Authorization: `SDK ${currentToken}` };
+            debug('Force updated axios headers with current token:', currentToken);
+          } catch (e) {
+            debug('Failed to update axios headers:', e);
+          }
+        }
+
         // Force cache clearing if disableCache is enabled
         if (options.disableCache) {
           debug('disableCache option enabled, clearing all Web SDK cache...');
-          try {
-            const allWebSdkKeys = [];
-            for (let i = 0; i < localStorage.length; i++) {
-              const key = localStorage.key(i);
-              if (key && (
-                key.startsWith('storysdk_') ||
-                key.startsWith('storysdk:')
-              )) {
-                allWebSdkKeys.push(key);
-              }
-            }
-            allWebSdkKeys.forEach(key => localStorage.removeItem(key));
-            debug('Cleared all Web SDK cache keys:', allWebSdkKeys.length);
-          } catch (e) {
-            debug('Error clearing all Web SDK cache:', e);
+          // When disableCache is used, clear everything including tokens
+          await clearAllSDKCache(false); // don't preserve tokens for disableCache
+          
+          // Force reset SDK initialization state to ensure fresh load
+          if (window.__STORYSDK_INITIALIZED__) {
+            window.__STORYSDK_INITIALIZED__ = false;
+          }
+          if (window.__STORYSDK_PREVIOUS_TOKEN__) {
+            delete window.__STORYSDK_PREVIOUS_TOKEN__;
           }
         }
 
@@ -487,7 +875,48 @@
           throw new Error('Container not found');
         }
 
+        // Force container to be completely clean
+        container.innerHTML = '';
+        container.className = 'storysdk-container';
+        
+        // Add unique data attribute based on token to help with debugging
+        container.setAttribute('data-token', safeOptions.token.substring(0, 8));
+
+        // CRITICAL: Always create fresh instance when token changes - don't try to update existing
+        if (window.__STORYSDK_INSTANCE__) {
+          debug('Token changed, destroying existing Story instance and creating new one');
+          
+          try {
+            // Destroy existing instance
+            if (typeof window.__STORYSDK_INSTANCE__.destroy === 'function') {
+              window.__STORYSDK_INSTANCE__.destroy();
+            }
+            
+            // Clear the container completely
+            if (container) {
+              container.innerHTML = '';
+              // Remove all event listeners
+              const newContainer = container.cloneNode(false);
+              container.parentNode.replaceChild(newContainer, container);
+              container = newContainer;
+            }
+            
+            // Remove global reference
+            delete window.__STORYSDK_INSTANCE__;
+            debug('Successfully destroyed existing Story instance');
+          } catch (error) {
+            debug('Error destroying existing instance:', error);
+            // Continue with fresh creation anyway
+            delete window.__STORYSDK_INSTANCE__;
+          }
+        }
+
+        // Add small delay to ensure DOM is fully ready after cleanup
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         const storySDK = new window.Story(safeOptions.token, safeOptions);
+        // Store global reference for token updates
+        window.__STORYSDK_INSTANCE__ = storySDK;
         
         //Timeout to prevent infinite waiting
         let dataLoadedTimeout;
@@ -533,7 +962,18 @@
           });
         });
         
+        debug('Rendering groups with token:', safeOptions.token);
         storySDK.renderGroups(container);
+        
+        // Debug container state after render
+        setTimeout(() => {
+          debug('Container state after render:', {
+            token: safeOptions.token.substring(0, 8),
+            innerHTML: container.innerHTML.length,
+            children: container.children.length,
+            height: container.offsetHeight
+          });
+        }, 1000);
 
         // Observe container size changes
         if (window.ResizeObserver) {
@@ -586,7 +1026,7 @@
       }
     }
 
-    window.addEventListener('message', function(event) {
+    window.addEventListener('message', async function(event) {
       try {
         // Handle both string and object data for better Android compatibility
         let messageData;
@@ -601,11 +1041,11 @@
         if (messageData.type === 'init') {
           const options = messageData.options || messageData.data;
           debug('Initializing SDK with options:', options);
-          initSDK(options);
+          await initSDK(options);
         } else if (messageData.type === 'storysdk:cache:clear') {
           const tokenHash = messageData.data?.tokenHash;
           if (tokenHash) {
-            clearTokenCache(tokenHash);
+            await clearTokenCache(tokenHash);
           }
           // Send response back
           postMessageToReactNative('storysdk:cache:cleared', {
@@ -614,10 +1054,28 @@
           });
         } else if (messageData.type === 'storysdk:cache:clear:all') {
           // Clear ALL SDK cache - more aggressive approach
-          clearAllSDKCache();
+          // Check if tokens should be preserved
+          const preserveTokens = messageData.data?.preserveTokens || false;
+          await clearAllSDKCache(preserveTokens);
           // Send response back
           postMessageToReactNative('storysdk:cache:cleared:all', {
-            success: true
+            success: true,
+            preserveTokens: preserveTokens
+          });
+        } else if (messageData.type === 'storysdk:cache:clear:token') {
+          // Clear cache by token hash
+          const tokenHash = messageData.data?.tokenHash;
+          if (tokenHash) {
+            await clearTokenCache(tokenHash);
+          }
+          postMessageToReactNative('storysdk:cache:cleared:token', {
+            success: true,
+            tokenHash: tokenHash
+          });
+        } else if (messageData.type === 'storysdk:cache:clear:patterns') {
+          // Clear cache by patterns - forwarded to React Native
+          postMessageToReactNative('storysdk:cache:clear:patterns:request', {
+            patterns: messageData.data?.patterns || []
           });
         }
       } catch (error) {
