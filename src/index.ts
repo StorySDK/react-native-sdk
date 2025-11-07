@@ -1,10 +1,10 @@
 import { StoryGroups } from './StoryGroups.js';
 import { StoryModal } from './StoryModal.js';
-import { StoryModalWeb } from './StoryModalWeb.js';
+import { StoryOnboarding } from './StoryOnboarding';
 
-export { StoryGroups, StoryModal, StoryModalWeb };
+export { StoryGroups, StoryModal, StoryOnboarding };
 export * from './StoryModal';
-export * from './StoryModalWeb';
 export * from './StoryGroups';
+export * from './StoryOnboarding';
 export * from './StorageHandler';
 export * from './CacheManager';
